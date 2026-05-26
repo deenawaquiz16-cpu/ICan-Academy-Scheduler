@@ -945,6 +945,25 @@ body {
   align-items: center;
 }
 
+.manage-teachers-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.manage-teachers-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
 /* ===== CATEGORY SELECTION (Consolidated Teachers View) ===== */
 .category-selection-grid {
   display: grid;

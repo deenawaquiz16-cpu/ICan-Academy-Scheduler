@@ -135,6 +135,7 @@ function App() {
         <TeacherList
           category={category}
           onSelectTeacher={handleSelectTeacher}
+          onManageTeachers={() => handleViewChange("manageTeachers")}
           onBack={handleBack}
         />
       )}

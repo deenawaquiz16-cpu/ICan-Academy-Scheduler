@@ -2,7 +2,7 @@ import { useState } from "react";
 import { loadTeachers } from "../utils/storage";
 import "../App.css";
 
-function TeacherList({ category: initialCategory, onSelectTeacher, onBack }) {
+function TeacherList({ category: initialCategory, onSelectTeacher, onManageTeachers, onBack }) {
   const [teachers] = useState(() => loadTeachers());
   const [activeCategory, setActiveCategory] = useState(initialCategory);
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,9 +17,11 @@ function TeacherList({ category: initialCategory, onSelectTeacher, onBack }) {
               ← Back
             </button>
             <h1>👩‍🏫 Teachers Directory</h1>
+            <button className="manage-teachers-btn" onClick={onManageTeachers} title="Add, Edit or Delete Teachers">
+              ⚙️ Manage
+            </button>
           </div>
         </div>
-
         <div className="category-selection-grid">
           <button className="category-select-card academy" onClick={() => setActiveCategory("academy")}>
             <div className="card-icon">🏫</div>
