@@ -20,6 +20,8 @@ import {
   addScheduleToStudent,
   editStudentSchedule,
   deleteStudentSchedule,
+  deleteTeacher,
+  loadTeachers,
 } from "../utils/storage";
 import { getOccupiedSlots, TIME_SLOTS } from "../utils/timeSlots";
 import "../App.css";
@@ -274,11 +276,28 @@ function SchedulePage({ teacherName, onBack }) {
     setTimeout(() => setSaved(false), 3000);
   };
 
+  const handleDeleteTeacher = () => {
+    if (confirm(`Are you sure you want to permanently delete teacher "${teacherName}"?`)) {
+      const teachers = loadTeachers();
+      let category = "academy";
+      if (teachers.wfh.includes(teacherName)) category = "wfh";
+      
+      deleteTeacher(category, teacherName);
+      syncStudentsToTeachers();
+      onBack();
+    }
+  };
+
   return (
     <div className="schedule-page">
       <div className="schedule-header">
         <button className="back-btn" onClick={onBack}>← Back</button>
-        <h1>{teacherName}</h1>
+        <div className="schedule-title-area">
+          <h1>{teacherName}</h1>
+          <button className="delete-teacher-header-btn" onClick={handleDeleteTeacher} title="Delete Teacher">
+            🗑️ Delete
+          </button>
+        </div>
         <div className="header-actions">
           {saved && <span className="saved-badge">✓ All Changes Saved</span>}
           <button className="save-all-btn" onClick={handleSaveAllChanges}>
