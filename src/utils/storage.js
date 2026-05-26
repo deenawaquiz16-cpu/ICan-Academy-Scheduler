@@ -27,7 +27,11 @@ export function loadTeachers() {
     console.error("Failed to load teachers:", e);
   }
   const defaults = {
-    academy: ["Sarah", "John", "Maria", "David", "Emily", "Michael", "Jessica", "Robert"],
+    academy: [
+      "Greg", "Mari", "Analyn", "Argel", "Ceige", "Deena", "Eunice", "Ezra", 
+      "Faye", "Janice", "Karen", "Melody", "Paula", "Rafael", "Rozeil", 
+      "Ianne", "Christine", "Demple", "JM", "Luis"
+    ],
     wfh: ["Anna", "James", "Lisa", "Thomas", "Rachel", "Daniel", "Laura", "Kevin"],
   };
   saveTeachers(defaults);
