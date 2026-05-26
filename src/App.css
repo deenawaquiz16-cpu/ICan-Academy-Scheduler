@@ -679,7 +679,8 @@ body {
   color: var(--text-secondary);
   width: 56px;
   min-width: 56px;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid #cbd5e1;
+  border-bottom: 1px solid #cbd5e1;
 }
 
 .time-label {
@@ -698,6 +699,8 @@ body {
 .lunch-cell {
   text-align: center;
   color: #d97706;
+  border-bottom: 1px solid #cbd5e1;
+  border-right: 1px solid #cbd5e1;
 }
 
 .lunch-text {
@@ -707,7 +710,7 @@ body {
 }
 
 .schedule-cell {
-  border: 1px solid #f1f5f9;
+  border: 1px solid #cbd5e1;
   padding: 1px;
   height: 32px;
   vertical-align: top;
