@@ -43,9 +43,7 @@ function HomePage({ onSelectCategory, onManageTeachers, onManageStudents, onOver
         <div className="summary-item">
           <span className="summary-value prominent">{totalStudents}</span>
           <span className="summary-label">Active Students</span>
-          <button className="summary-add-link" onClick={onManageStudents}>+ Add Student</button>
         </div>
-        <div className="summary-divider"></div>
         <div className="summary-item">
           <span className="summary-value prominent">{totalClasses}</span>
           <span className="summary-label">Total Classes</span>
