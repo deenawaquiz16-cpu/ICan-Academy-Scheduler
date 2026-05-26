@@ -2,6 +2,7 @@ import "../App.css";
 
 function HomePage({ onSelectCategory, onManageTeachers, onManageStudents, onOverallSchedule, onFindAvailability, onCalendar, onLiveView, stats }) {
   const { academyCount = 0, wfhCount = 0, totalStudents = 0, totalClasses = 0 } = stats || {};
+  const totalTeachers = academyCount + wfhCount;
 
   return (
     <div className="home-page">
@@ -9,29 +10,31 @@ function HomePage({ onSelectCategory, onManageTeachers, onManageStudents, onOver
         <h1>🤖 ICan Academy</h1>
         <p className="subtitle">AI-Powered Learning Scheduler</p>
       </div>
+      
       <div className="category-cards">
         <button
-          className="category-card academy"
-          onClick={() => onSelectCategory("academy")}
+          className="category-card main-dir teachers"
+          onClick={() => onSelectCategory(null)}
         >
-          <div className="card-icon">🏫</div>
-          <h2>Academy Teachers</h2>
-          <p>Teachers working at the academy campus</p>
+          <div className="card-icon">👩‍🏫</div>
+          <h2>Teachers</h2>
+          <p>View all academy & remote teachers</p>
           <div className="card-data-display">
-            <span className="big-stat-number">{academyCount}</span>
-            <span className="big-stat-label">Teachers</span>
+            <span className="big-stat-number">{totalTeachers}</span>
+            <span className="big-stat-label">Total Teachers</span>
           </div>
         </button>
+
         <button
-          className="category-card wfh"
-          onClick={() => onSelectCategory("wfh")}
+          className="category-card main-dir students"
+          onClick={onManageStudents}
         >
-          <div className="card-icon">🏠</div>
-          <h2>Work From Home</h2>
-          <p>Remote teachers working from home</p>
+          <div className="card-icon">🎓</div>
+          <h2>Students</h2>
+          <p>Manage all student directory and info</p>
           <div className="card-data-display">
-            <span className="big-stat-number">{wfhCount}</span>
-            <span className="big-stat-label">Teachers</span>
+            <span className="big-stat-number">{totalStudents}</span>
+            <span className="big-stat-label">Total Students</span>
           </div>
         </button>
       </div>
@@ -46,7 +49,6 @@ function HomePage({ onSelectCategory, onManageTeachers, onManageStudents, onOver
         <div className="summary-item">
           <span className="summary-value prominent">{totalClasses}</span>
           <span className="summary-label">Total Classes</span>
-          <button className="summary-add-link" onClick={onFindAvailability}>+ Schedule Class</button>
         </div>
       </div>
 
