@@ -893,6 +893,58 @@ body {
   color: white;
 }
 
+.card-data-display {
+  margin-top: 15px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.big-stat-number {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1;
+}
+
+.big-stat-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-value.prominent {
+  font-size: 2.5rem;
+  font-weight: 800;
+}
+
+.summary-add-link {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  margin-top: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.summary-add-link:hover {
+  background-color: #eff6ff;
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 /* Global Trash Button (bottom-right, all pages) */
 .global-trash-btn {
   position: fixed;
