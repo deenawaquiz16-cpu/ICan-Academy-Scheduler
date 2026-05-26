@@ -22,13 +22,13 @@ function App() {
   const [sheetData, setSheetData] = useState([]);
   const [loadingSheet, setLoadingSheet] = useState(false);
 
-  const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS69f9B9F04fB9bN0_yM-4w1_D-U9M2DclqLxtrktUYpiiclOt9lgQT2dEqB95QnFfTtc/pub?output=csv";
+  const GOOGLE_CSV_LINK = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS69f9B9F04fB9bN0_yM-4w1_D-U9M2DclqLxtrktUYpiiclOt9lgQT2dEqB95QnFfTtc/pub?output=csv";
 
   useEffect(() => {
     const fetchSheetData = async () => {
       setLoadingSheet(true);
       try {
-        const response = await fetch(SHEET_URL);
+        const response = await fetch(GOOGLE_CSV_LINK);
         const csvText = await response.text();
         
         Papa.parse(csvText, {
