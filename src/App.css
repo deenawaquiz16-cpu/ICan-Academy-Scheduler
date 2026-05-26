@@ -634,7 +634,7 @@ body {
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
 }
 
 .schedule-table thead {
@@ -668,7 +668,7 @@ body {
 
 .day-short {
   display: inline;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
 }
 
 .time-cell {
@@ -684,7 +684,7 @@ body {
 }
 
 .time-label {
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   line-height: 1.1;
 }
 
@@ -704,8 +704,8 @@ body {
 }
 
 .lunch-text {
-  font-size: 0.65rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
   letter-spacing: 0.5px;
 }
 
