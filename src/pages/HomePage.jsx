@@ -60,9 +60,6 @@ function HomePage({ onSelectCategory, onManageTeachers, onManageStudents, onOver
         <button className="manage-link-btn" onClick={onFindAvailability}>
           🔍 Find Availability
         </button>
-        <button className="manage-link-btn" onClick={onManageStudents}>
-          🎓 Manage Students
-        </button>
         <button className="manage-link-btn live-btn" onClick={onLiveView}>
           📡 Live Data
         </button>
