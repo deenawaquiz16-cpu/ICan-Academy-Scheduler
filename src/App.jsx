@@ -22,7 +22,7 @@ function App() {
   const [sheetData, setSheetData] = useState([]);
   const [loadingSheet, setLoadingSheet] = useState(false);
 
-  const GOOGLE_CSV_LINK = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS69f9B9F04fB9bN0_yM-4w1_D-U9M2DclqLxtrktUYpiiclOt9lgQT2dEqB95QnFfTtc/pub?output=csv";
+  const GOOGLE_CSV_LINK = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR7c6o7zepJrfkmNIBkElNvdkog5nX1Sr67YYpka4p1FZnyfz2CNsyKPLzUtZo-JV57wjwO83ldTU35/pub?output=csv";
 
   useEffect(() => {
     const fetchSheetData = async () => {
