@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a1628"/>
+      <stop offset="100%" style="stop-color:#1a3a5f"/>
+    </linearGradient>
+    <linearGradient id="brain" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0ea5e9"/>
+      <stop offset="100%" style="stop-color:#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <!-- AI Brain Icon -->
+  <circle cx="32" cy="28" r="12" fill="none" stroke="url(#brain)" stroke-width="2.5"/>
+  <circle cx="32" cy="28" r="6" fill="url(#brain)" opacity="0.3"/>
+  <circle cx="32" cy="28" r="3" fill="#0ea5e9"/>
+  <!-- Neural connections -->
+  <line x1="32" y1="16" x2="32" y2="10" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round"/>
+  <line x1="44" y1="28" x2="50" y2="28" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round"/>
+  <line x1="20" y1="28" x2="14" y2="28" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round"/>
+  <line x1="40.5" y1="19.5" x2="44.5" y2="15.5" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round"/>
+  <line x1="23.5" y1="19.5" x2="19.5" y2="15.5" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round"/>
+  <!-- Nodes -->
+  <circle cx="32" cy="10" r="2.5" fill="#0ea5e9"/>
+  <circle cx="50" cy="28" r="2.5" fill="#0ea5e9"/>
+  <circle cx="14" cy="28" r="2.5" fill="#0ea5e9"/>
+  <circle cx="44.5" cy="15.5" r="2.5" fill="#0ea5e9"/>
+  <circle cx="19.5" cy="15.5" r="2.5" fill="#0ea5e9"/>
+  <!-- Book base -->
+  <path d="M18 44 L32 40 L46 44 L46 52 L32 48 L18 52 Z" fill="url(#brain)" opacity="0.9"/>
+  <path d="M32 40 L32 48" stroke="#0a1628" stroke-width="1.5"/>
+  <!-- IC text -->
+  <text x="32" y="58" font-family="Arial, sans-serif" font-size="7" font-weight="bold" fill="#0ea5e9" text-anchor="middle">ICAN</text>
+</svg>
