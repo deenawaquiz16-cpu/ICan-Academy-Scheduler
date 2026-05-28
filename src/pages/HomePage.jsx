@@ -33,21 +33,17 @@ function HomePage({ onSelectCategory, onManageTeachers, onManageStudents, onOver
           <h2>Students</h2>
           <p>Manage all student directory and info</p>
           <div className="card-data-display">
-            <span className="big-stat-number">{totalStudents}</span>
-            <span className="big-stat-label">Total Students</span>
+            <div className="stat-group">
+              <span className="big-stat-number">{totalStudents}</span>
+              <span className="big-stat-label">Students</span>
+            </div>
+            <div className="stat-divider"></div>
+            <div className="stat-group">
+              <span className="big-stat-number">{totalClasses}</span>
+              <span className="big-stat-label">Classes</span>
+            </div>
           </div>
         </button>
-      </div>
-
-      <div className="home-summary">
-        <div className="summary-item">
-          <span className="summary-value prominent">{totalStudents}</span>
-          <span className="summary-label">Active Students</span>
-        </div>
-        <div className="summary-item">
-          <span className="summary-value prominent">{totalClasses}</span>
-          <span className="summary-label">Total Classes</span>
-        </div>
       </div>
 
       <div className="home-manage-links">

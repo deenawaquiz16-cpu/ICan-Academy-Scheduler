@@ -943,6 +943,19 @@ body {
   letter-spacing: 0.5px;
 }
 
+.stat-group {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 25px;
+  background: var(--border);
+  align-self: center;
+}
+
 .summary-value.prominent {
   font-size: 2.5rem;
   font-weight: 800;
