@@ -7,7 +7,7 @@ function HomePage({ onSelectCategory, onManageTeachers, onManageStudents, onOver
   return (
     <div className="home-page">
       <div className="home-header">
-        <h1>🤖 ICan Academy</h1>
+        <h1>🤖 ICan Academy (UPDATED)</h1>
         <p className="subtitle">AI-Powered Learning Scheduler</p>
       </div>
       
