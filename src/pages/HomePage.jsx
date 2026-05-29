@@ -7,7 +7,7 @@ function HomePage({ onSelectCategory, onManageTeachers, onManageStudents, onOver
   return (
     <div className="home-page">
       <div className="home-header">
-        <h1>🤖 ICan Academy (UPDATED)</h1>
+        <h1>🤖 ICan Academy</h1>
         <p className="subtitle">AI-Powered Learning Scheduler</p>
       </div>
       
@@ -20,8 +20,15 @@ function HomePage({ onSelectCategory, onManageTeachers, onManageStudents, onOver
           <h2>Teachers</h2>
           <p>View all academy & remote teachers</p>
           <div className="card-data-display">
-            <span className="big-stat-number">{totalTeachers}</span>
-            <span className="big-stat-label">Total Teachers</span>
+            <div className="stat-group">
+              <span className="big-stat-number">{academyCount}</span>
+              <span className="big-stat-label">Academy</span>
+            </div>
+            <div className="stat-divider"></div>
+            <div className="stat-group">
+              <span className="big-stat-number">{wfhCount}</span>
+              <span className="big-stat-label">WFH</span>
+            </div>
           </div>
         </button>
 

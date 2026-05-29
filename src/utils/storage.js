@@ -6,10 +6,19 @@ const TRASH_KEY = "ican-academy-trash";
 
 // ===== TEACHERS =====
 export function loadTeachers() {
+  const defaults = {
+    academy: [
+      "Greg", "Mari", "Analyn", "Argel", "Ceige", "Deena", "Eunice", "Ezra", 
+      "Faye", "Janice", "Karen", "Melody", "Paula", "Rafael", "Rozeil", 
+      "Ianne", "Christine", "Demple", "JM", "Luis"
+    ],
+    wfh: ["Jennifer", "John", "Joric", "Kath", "Leo"],
+  };
+
   try {
     let data = localStorage.getItem(TEACHERS_KEY);
     
-    // Recovery for teachers
+    // Recovery for teachers if no data at all
     if (!data) {
       const oldKeys = ["teachers", "ican-teachers", "academy-teachers"];
       for (const k of oldKeys) {
@@ -22,18 +31,37 @@ export function loadTeachers() {
       }
     }
 
-    if (data) return JSON.parse(data);
+    if (data) {
+      const parsed = JSON.parse(data);
+      
+      // Migration: if it's an old array format, put them in academy
+      if (Array.isArray(parsed)) {
+        return { academy: parsed, wfh: [] };
+      }
+      
+      // Ensure structure integrity
+      if (parsed && typeof parsed === 'object') {
+        const hasAcademy = parsed.academy && Array.isArray(parsed.academy) && parsed.academy.length > 0;
+        const hasWfh = parsed.wfh && Array.isArray(parsed.wfh) && parsed.wfh.length > 0;
+        
+        // Only return defaults if BOTH lists are truly missing/empty
+        if (!hasAcademy && !hasWfh) {
+          // If we had data but it's empty, we might want to check if it's intentional
+          // For now, let's just ensure the structure exists
+          if (!parsed.academy) parsed.academy = [];
+          if (!parsed.wfh) parsed.wfh = [];
+          return parsed;
+        }
+        
+        if (!parsed.academy) parsed.academy = [];
+        if (!parsed.wfh) parsed.wfh = [];
+        return parsed;
+      }
+    }
   } catch (e) {
     console.error("Failed to load teachers:", e);
   }
-  const defaults = {
-    academy: [
-      "Greg", "Mari", "Analyn", "Argel", "Ceige", "Deena", "Eunice", "Ezra", 
-      "Faye", "Janice", "Karen", "Melody", "Paula", "Rafael", "Rozeil", 
-      "Ianne", "Christine", "Demple", "JM", "Luis"
-    ],
-    wfh: ["Anna", "James", "Lisa", "Thomas", "Rachel", "Daniel", "Laura", "Kevin"],
-  };
+
   saveTeachers(defaults);
   return defaults;
 }

@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import Papa from "papaparse";
 import HomePage from "./pages/HomePage";
 import TeacherList from "./pages/TeacherList";
 import SchedulePage from "./pages/SchedulePage";
@@ -9,48 +8,15 @@ import OverallSchedule from "./pages/OverallSchedule";
 import FindAvailability from "./pages/FindAvailability";
 import TrashHistory from "./pages/TrashHistory";
 import CalendarPage from "./pages/CalendarPage";
-import { getTrashCount, loadTeachers, loadStudents, syncStudentsToTeachers } from "./utils/storage";
+import { getTrashCount, loadTeachers, loadStudents, loadSchedules, syncStudentsToTeachers } from "./utils/storage";
 import "./App.css";
 
 function App() {
   const [view, setView] = useState("home");
+  console.log("App component: rendering, current view:", view);
   const [category, setCategory] = useState(null);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [trashCount, setTrashCount] = useState(() => getTrashCount());
-  
-  // Google Sheets Data State
-  const [sheetData, setSheetData] = useState([]);
-  const [loadingSheet, setLoadingSheet] = useState(false);
-
-  const GOOGLE_CSV_LINK = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR7c6o7zepJrfkmNIBkElNvdkog5nX1Sr67YYpka4p1FZnyfz2CNsyKPLzUtZo-JV57wjwO83ldTU35/pub?output=csv";
-
-  useEffect(() => {
-    const fetchSheetData = async () => {
-      setLoadingSheet(true);
-      try {
-        const response = await fetch(GOOGLE_CSV_LINK);
-        const csvText = await response.text();
-        
-        Papa.parse(csvText, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (results) => {
-            setSheetData(results.data);
-            setLoadingSheet(false);
-          },
-          error: (error) => {
-            console.error("PapaParse error:", error);
-            setLoadingSheet(false);
-          }
-        });
-      } catch (error) {
-        console.error("Fetch error:", error);
-        setLoadingSheet(false);
-      }
-    };
-
-    fetchSheetData();
-  }, []);
 
   // App-wide stats
   const stats = useMemo(() => {
@@ -82,9 +48,10 @@ function App() {
       console.error("Error calculating stats:", err);
       return { academyCount: 0, wfhCount: 0, totalStudents: 0, totalClasses: 0 };
     }
-  }, [view]);
+  }, [view]); // Recalculate when navigating back to home or changing views
 
   useEffect(() => {
+    // Force a sync on load to ensure teacher schedules match student data
     syncStudentsToTeachers();
     setTrashCount(getTrashCount());
   }, []);
@@ -95,7 +62,18 @@ function App() {
   };
 
   const handleSelectCategory = (cat) => {
-    setCategory(cat);
+    let targetCat = cat;
+    // Auto-select category if one is empty
+    if (!cat) {
+      const teachers = loadTeachers();
+      const academyCount = teachers.academy?.length || 0;
+      const wfhCount = teachers.wfh?.length || 0;
+      
+      if (academyCount > 0 && wfhCount === 0) targetCat = "academy";
+      else if (wfhCount > 0 && academyCount === 0) targetCat = "wfh";
+    }
+    
+    setCategory(targetCat);
     handleViewChange("teachers");
   };
 
@@ -127,7 +105,6 @@ function App() {
           onOverallSchedule={() => handleViewChange("overallSchedule")}
           onFindAvailability={() => handleViewChange("findAvailability")}
           onCalendar={() => handleViewChange("calendar")}
-          onLiveView={() => handleViewChange("liveView")}
           stats={stats}
         />
       )}
@@ -135,7 +112,6 @@ function App() {
         <TeacherList
           category={category}
           onSelectTeacher={handleSelectTeacher}
-          onManageTeachers={() => handleViewChange("manageTeachers")}
           onBack={handleBack}
         />
       )}
@@ -166,43 +142,8 @@ function App() {
       {view === "trash" && (
         <TrashHistory onBack={handleBack} />
       )}
-      
-      {view === "liveView" && (
-        <div className="live-view-page">
-          <div className="manage-header">
-            <button className="back-btn" onClick={handleBack}>← Back</button>
-            <h1>📡 Live Sheet Data</h1>
-          </div>
-          <div className="manage-section">
-            {loadingSheet ? (
-              <div className="loading-container">Loading live data...</div>
-            ) : (
-              <div className="student-table-container">
-                <table className="student-table">
-                  <thead>
-                    <tr>
-                      {sheetData.length > 0 && Object.keys(sheetData[0]).map(header => (
-                        <th key={header}>{header}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sheetData.map((row, idx) => (
-                      <tr key={idx}>
-                        {Object.keys(row).map(key => (
-                          <td key={key}>{row[key]}</td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* Global Trash Button */}
+      {/* Global Trash Button — visible on every page except trash itself */}
       {view !== "trash" && (
         <button className="global-trash-btn" onClick={() => handleViewChange("trash")} title={`Trash & Recovery (${trashCount} items)`}>
           🗑️
