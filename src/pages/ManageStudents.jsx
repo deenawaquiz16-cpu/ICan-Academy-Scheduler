@@ -373,15 +373,11 @@ function ManageStudents({ onBack }) {
 
   const formatSchedule = (schedules, studentId) => {
     const sched = schedules?.[0] || { days: [], timeSlot: "08:00", duration: 25 };
-    const isEditing = editingScheduleFor === studentId;
 
-    const toggleDay = (day) => {
-      const newDays = sched.days.includes(day)
-        ? sched.days.filter((d) => d !== day)
-        : [...sched.days, day];
-      handleInlineScheduleUpdate(studentId, { days: newDays });
-    };
-
+    const daysStr = sched.days.length > 0 
+      ? sched.days.map(d => DAY_SHORT[d]).join(", ") 
+      : "No days set";
+    
     // Custom display end time logic based on user request
     const getDisplayEndTime = (startKey, dur) => {
       const slotIdx = TIME_SLOTS.findIndex(s => s.key === startKey);
@@ -403,105 +399,45 @@ function ManageStudents({ onBack }) {
       return `${displayHour}:${displayMinute} ${period}`;
     };
 
-    if (!isEditing) {
-      const daysStr = sched.days.length > 0 
-        ? sched.days.map(d => DAY_SHORT[d]).join(", ") 
-        : "No days set";
-      
-      const startTimeLabel = TIME_SLOTS.find(t => t.key === (sched.timeSlot || "08:00"))?.start || "No time set";
-      const endTimeLabel = getDisplayEndTime(sched.timeSlot || "08:00", sched.duration || 25);
-
-      return (
-        <div 
-          className="schedule-summary-chip" 
-          onClick={() => setEditingScheduleFor(studentId)}
-          title="Click to edit schedule"
-        >
-          <span className="summary-days">{daysStr}</span>
-          <span className="summary-at">@</span>
-          <span className="summary-time">{startTimeLabel} – {endTimeLabel}</span>
-          <span className="edit-icon-small">✏️</span>
-        </div>
-      );
-    }
-
-    const startTimeLabel = TIME_SLOTS.find(t => t.key === (sched.timeSlot || "08:00"))?.start || "";
-    const displayEndTime = getDisplayEndTime(sched.timeSlot || "08:00", sched.duration || 25);
+    const startTimeLabel = TIME_SLOTS.find(t => t.key === (sched.timeSlot || "08:00"))?.start || "No time set";
+    const endTimeLabel = getDisplayEndTime(sched.timeSlot || "08:00", sched.duration || 25);
 
     return (
-      <div className="schedule-edit-popover" onClick={(e) => e.stopPropagation()}>
-        <div className="popover-section">
-          <label>Days</label>
-          <div className="day-picker-inline">
-            {ALL_DAYS.map((day) => {
-              const displayDay = day === "Thursday" ? "Th" : 
-                                 day === "Saturday" ? "Sat" : 
-                                 day === "Sunday" ? "Sun" : 
-                                 day[0];
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  className={`day-dot ${sched.days.includes(day) ? "active" : ""}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    toggleDay(day);
-                  }}
-                  title={day}
-                >
-                  {displayDay}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="popover-section">
-          <label>Start Time</label>
-          <div className="start-time-grid-mini">
-            {TIME_SLOTS.filter(s => !s.isLunch).map((slot) => (
-              <button
-                key={slot.key}
-                type="button"
-                className={`time-pill-mini ${sched.timeSlot === slot.key ? "selected" : ""}`}
-                onClick={() => handleInlineScheduleUpdate(studentId, { timeSlot: slot.key })}
-              >
-                {slot.start}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="popover-section">
-          <label>Duration</label>
-          <div className="duration-segmented-mini">
-            {[25, 50, 100].map((d) => (
-              <button
-                key={d}
-                type="button"
-                className={`duration-pill-mini ${sched.duration === d ? "selected" : ""}`}
-                onClick={() => handleInlineScheduleUpdate(studentId, { duration: d })}
-              >
-                {d}m
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="preview-card-mini">
-          <div className="preview-range-mini">{startTimeLabel} – {displayEndTime}</div>
-        </div>
-
-        <button 
-          className="done-schedule-btn" 
-          onClick={() => setEditingScheduleFor(null)}
-        >
-          Done
-        </button>
+      <div 
+        className="schedule-summary-chip" 
+        onClick={() => setEditingScheduleFor(studentId)}
+        title="Click to edit schedule"
+      >
+        <span className="summary-days">{daysStr}</span>
+        <span className="summary-at">@</span>
+        <span className="summary-time">{startTimeLabel} – {endTimeLabel}</span>
+        <span className="edit-icon-small">✏️</span>
       </div>
     );
   };
+
+  const editingStudent = students.find(s => s.id === editingScheduleFor);
+  const editingSched = editingStudent?.schedules?.[0] || { days: [], timeSlot: "08:00", duration: 25 };
+
+  // Custom display end time logic for the modal
+  const getModalDisplayEndTime = (startKey, dur) => {
+    const slotIdx = TIME_SLOTS.findIndex(s => s.key === startKey);
+    if (slotIdx === -1) return "";
+    const startSlot = TIME_SLOTS[slotIdx];
+    const [h, m] = startSlot.key.split(":").map(Number);
+    let extraMinutes = dur;
+    if (dur === 100) extraMinutes = 110;
+    const totalMinutes = m + extraMinutes;
+    let endH = h + Math.floor(totalMinutes / 60);
+    let endM = totalMinutes % 60;
+    const period = endH >= 12 ? "PM" : "AM";
+    const displayHour = endH > 12 ? endH - 12 : endH === 0 ? 12 : endH;
+    const displayMinute = endM.toString().padStart(2, "0");
+    return `${displayHour}:${displayMinute} ${period}`;
+  };
+
+  const modalStartTimeLabel = TIME_SLOTS.find(t => t.key === (editingSched.timeSlot || "08:00"))?.start || "";
+  const modalEndTimeLabel = getModalDisplayEndTime(editingSched.timeSlot || "08:00", editingSched.duration || 25);
 
   const allCurrentTeachers = [...new Set(students.map((s) => s.currentTeacher).filter(Boolean))].sort();
 
@@ -532,6 +468,85 @@ function ManageStudents({ onBack }) {
           onAdd={handleAdd}
           allTeachersList={allTeachersList}
         />
+
+        {/* Schedule Edit Modal */}
+        {editingScheduleFor && (
+          <div className="modal-overlay" onClick={() => setEditingScheduleFor(null)}>
+            <div className="modal-content schedule-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>📅 Edit Schedule: {editingStudent.name}</h2>
+                <button className="modal-close" onClick={() => setEditingScheduleFor(null)}>×</button>
+              </div>
+              <div className="modal-body">
+                <div className="popover-section">
+                  <label>Days</label>
+                  <div className="day-picker-inline">
+                    {ALL_DAYS.map((day) => (
+                      <button
+                        key={day}
+                        type="button"
+                        className={`day-dot ${editingSched.days.includes(day) ? "active" : ""}`}
+                        onClick={() => {
+                          const newDays = editingSched.days.includes(day)
+                            ? editingSched.days.filter((d) => d !== day)
+                            : [...editingSched.days, day];
+                          handleInlineScheduleUpdate(editingScheduleFor, { days: newDays });
+                        }}
+                      >
+                        {DAY_SHORT[day]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="popover-section" style={{ marginTop: '20px' }}>
+                  <label>Start Time</label>
+                  <div className="start-time-grid-mini">
+                    {TIME_SLOTS.filter(s => !s.isLunch).map((slot) => (
+                      <button
+                        key={slot.key}
+                        type="button"
+                        className={`time-pill-mini ${editingSched.timeSlot === slot.key ? "selected" : ""}`}
+                        onClick={() => handleInlineScheduleUpdate(editingScheduleFor, { timeSlot: slot.key })}
+                      >
+                        {slot.start}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="popover-section" style={{ marginTop: '20px' }}>
+                  <label>Duration</label>
+                  <div className="duration-segmented-mini">
+                    {[25, 50, 100].map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        className={`duration-pill-mini ${editingSched.duration === d ? "selected" : ""}`}
+                        onClick={() => handleInlineScheduleUpdate(editingScheduleFor, { duration: d })}
+                      >
+                        {d} mins
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="preview-card-mini" style={{ marginTop: '20px' }}>
+                  <div className="preview-range-mini">{modalStartTimeLabel} – {modalEndTimeLabel}</div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  className="modal-save-btn" 
+                  onClick={() => setEditingScheduleFor(null)}
+                  style={{ width: '100%' }}
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Search & Filters */}
         <div className="student-filters">
