@@ -1,21 +1,9 @@
 export const academyTeachers = [
-  "Teacher Sarah",
-  "Teacher John",
-  "Teacher Maria",
-  "Teacher David",
-  "Teacher Emily",
-  "Teacher Michael",
-  "Teacher Jessica",
-  "Teacher Robert",
+  "Greg", "Mari", "Analyn", "Argel", "Ceige", "Deena", "Eunice", "Ezra", 
+  "Faye", "Janice", "Karen", "Melody", "Paula", "Rafael", "Rozeil", 
+  "Ianne", "Christine", "Demple", "JM", "Luis"
 ];
 
 export const wfhTeachers = [
-  "Teacher Anna",
-  "Teacher James",
-  "Teacher Lisa",
-  "Teacher Thomas",
-  "Teacher Rachel",
-  "Teacher Daniel",
-  "Teacher Laura",
-  "Teacher Kevin",
+  "Jennifer", "John", "Joric", "Kath", "Leo"
 ];

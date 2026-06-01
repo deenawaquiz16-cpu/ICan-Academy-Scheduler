@@ -34,6 +34,19 @@ export function loadTeachers() {
     if (data) {
       const parsed = JSON.parse(data);
       
+      // MIGRATION: If the list contains generic placeholder names (David, Jessica, etc.), 
+      // replace them with the actual teacher list.
+      const placeholders = ["David", "Jessica", "John", "Maria", "Michael", "Robert", "Sarah", "Emily"];
+      const currentAcademy = parsed.academy || [];
+      const isPlaceholder = currentAcademy.length > 0 && currentAcademy.every(name => 
+        placeholders.includes(name) || name.startsWith("Teacher ")
+      );
+
+      if (isPlaceholder) {
+        saveTeachers(defaults);
+        return defaults;
+      }
+
       // Migration: if it's an old array format, put them in academy
       if (Array.isArray(parsed)) {
         return { academy: parsed, wfh: [] };
