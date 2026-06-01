@@ -539,19 +539,13 @@ function ManageStudents({ onBack }) {
             className={`tab-btn ${activeTab === "all" ? "active" : ""}`}
             onClick={() => setActiveTab("all")}
           >
-            📋 All Students <span className="tab-count">({students.length})</span>
-          </button>
-          <button
-            className={`tab-btn ${activeTab === "face-to-face" ? "active" : ""}`}
-            onClick={() => setActiveTab("face-to-face")}
-          >
-            🏫 Face-to-Face <span className="tab-count">({students.filter((s) => s.classType === "face-to-face").length})</span>
+            📋 All Students <span className="tab-count">({students.filter(s => !s.memo).length})</span>
           </button>
           <button
             className={`tab-btn ${activeTab === "online" ? "active" : ""}`}
             onClick={() => setActiveTab("online")}
           >
-            💻 Online <span className="tab-count">({students.filter((s) => s.classType === "online").length})</span>
+            💻 Online <span className="tab-count">({students.filter((s) => s.classType === "online" && !s.memo).length})</span>
           </button>
         </div>
 
