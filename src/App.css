@@ -1138,7 +1138,7 @@ body {
 }
 
 .manage-section {
-  max-width: 1800px;
+  max-width: 98%;
   margin: 0 auto 2rem;
   background: var(--surface);
   border-radius: var(--radius);
