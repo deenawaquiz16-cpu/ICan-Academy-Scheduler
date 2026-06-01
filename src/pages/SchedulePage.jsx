@@ -62,7 +62,7 @@ function SchedulePage({ teacherName, onBack }) {
 
     const existingClass = teacherSchedule[day]?.[timeSlot.key];
     
-    // If clicking a cell that has a class, just open it for editing (ignore multi-select)
+    // If clicking a cell that has a class, open it for editing
     if (existingClass) {
       setEditingClass({ ...existingClass, day, timeKey: timeSlot.key, timeSlot });
       setSelectedCell({ day, timeSlot });
@@ -71,39 +71,12 @@ function SchedulePage({ teacherName, onBack }) {
       return;
     }
 
-    // Logic for multi-select (50 min class)
-    if (firstSelectedCell) {
-      // If clicking the same cell again, deselect it
-      if (firstSelectedCell.day === day && firstSelectedCell.timeSlot.key === timeSlot.key) {
-        setFirstSelectedCell(null);
-        return;
-      }
-
-      // Check if it's the same day and the slot is consecutive
-      if (firstSelectedCell.day === day) {
-        const firstIdx = TIME_SLOTS.findIndex(s => s.key === firstSelectedCell.timeSlot.key);
-        const secondIdx = TIME_SLOTS.findIndex(s => s.key === timeSlot.key);
-        
-        // If consecutive (either order)
-        if (Math.abs(firstIdx - secondIdx) === 1) {
-          const startIdx = Math.min(firstIdx, secondIdx);
-          const startSlot = TIME_SLOTS[startIdx];
-          
-          setEditingClass(null);
-          setSelectedCell({ day, timeSlot: startSlot, duration: 50 });
-          setFirstSelectedCell(null);
-          setFormOpen(true);
-          return;
-        }
-      }
-      
-      // If not consecutive or different day, make the new click the first selected cell
-      setFirstSelectedCell({ day, timeSlot });
-    } else {
-      // First click on an empty cell
-      setFirstSelectedCell({ day, timeSlot });
-    }
-  }, [teacherSchedule, blocks, teacherName, firstSelectedCell]);
+    // Single click opens the form immediately for a new class
+    setEditingClass(null);
+    setSelectedCell({ day, timeSlot, duration: 25 });
+    setFirstSelectedCell(null);
+    setFormOpen(true);
+  }, [teacherSchedule, blocks, teacherName]);
 
   // Handle right-click on cell
   const handleCellRightClick = useCallback((day, timeSlot, event) => {
