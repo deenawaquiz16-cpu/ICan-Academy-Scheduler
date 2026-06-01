@@ -175,10 +175,19 @@ function SchedulePage({ teacherName, onBack }) {
   };
 
   const handleSaveClass = (classData) => {
-    // 1. Find the student
-    const students = loadStudents();
-    const student = students.find(s => s.name === classData.studentName);
+    // 1. Find the student or create a placeholder for manual entries
+    let students = loadStudents();
+    let student = students.find(s => s.name === classData.studentName);
     
+    if (!student && classData.studentName) {
+      // Create a student for manual/f2f memos
+      const updatedList = addStudent(classData.studentName);
+      student = updatedList.find(s => s.name === classData.studentName);
+      if (student) {
+        updateStudent(student.id, { memo: true });
+      }
+    }
+
     if (student) {
       // Update student's main info
       updateStudent(student.id, {
@@ -233,9 +242,17 @@ function SchedulePage({ teacherName, onBack }) {
   };
 
   const handleMultiDaySave = (days, timeSlot, classData) => {
-    const students = loadStudents();
-    const student = students.find(s => s.name === classData.studentName);
+    let students = loadStudents();
+    let student = students.find(s => s.name === classData.studentName);
     
+    if (!student && classData.studentName) {
+      const updatedList = addStudent(classData.studentName);
+      student = updatedList.find(s => s.name === classData.studentName);
+      if (student) {
+        updateStudent(student.id, { memo: true });
+      }
+    }
+
     if (student) {
       updateStudent(student.id, {
         currentTeacher: classData.teacherName,

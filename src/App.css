@@ -2087,3 +2087,44 @@ body {
   background: var(--border);
   border-radius: 3px;
 }
+
+/* ===== MANUAL STUDENT INPUT (f2f) ===== */
+.manual-student-input-area {
+  margin-bottom: 1rem;
+}
+
+.manual-student-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-weight: 600;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.manual-student-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1);
+}
+
+.manual-input-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+.f2f-grid-collapsed {
+  max-height: 120px;
+  opacity: 0.7;
+  filter: grayscale(0.5);
+  transition: all 0.2s ease;
+}
+
+.f2f-grid-collapsed:hover {
+  max-height: 240px;
+  opacity: 1;
+  filter: none;
+}

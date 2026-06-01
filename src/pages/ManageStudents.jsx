@@ -249,7 +249,7 @@ function ManageStudents({ onBack }) {
 
       const matchesTeacher = filterTeacher === "" || s.currentTeacher === filterTeacher;
       const matchesStatus = filterStatus === "" || status === filterStatus;
-      const matchesTab = activeTab === "all" || s.classType === activeTab;
+      const matchesTab = activeTab === "all" ? !s.memo : s.classType === activeTab;
 
       return matchesSearch && matchesTeacher && matchesStatus && matchesTab;
     });

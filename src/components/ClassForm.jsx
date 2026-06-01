@@ -38,6 +38,7 @@ function ClassForm({
   }, [allStudents, scheduledStudents, editingClass]);
 
   const [studentName, setStudentName] = useState(editingClass?.studentName || "");
+  const [manualStudentName, setManualStudentName] = useState(editingClass?.studentName || "");
   const [selectedTeacher, setSelectedTeacher] = useState(editingClass?.teacherName || teacherName);
   const [classType, setClassType] = useState(editingClass?.classType || "Online");
   const [duration, setDuration] = useState(editingClass?.duration || defaultDuration || 25);
@@ -49,6 +50,7 @@ function ClassForm({
 
   const handleStudentSelect = (selectedName) => {
     setStudentName(selectedName);
+    setManualStudentName(selectedName);
     
     // Auto-fill from student data if not editing
     if (!isEditing && selectedName !== "") {
@@ -71,6 +73,7 @@ function ClassForm({
   };
 
   const isEditing = !!editingClass;
+  const isF2F = classType === "Face-to-Face";
   
   // Custom display end time logic based on user request
   const getDisplayEndTime = (startKey, dur) => {
@@ -130,8 +133,10 @@ function ClassForm({
     e.preventDefault();
     setError("");
 
-    if (!studentName) {
-      setError("Please select a student.");
+    const finalStudentName = isF2F ? manualStudentName.trim() : studentName;
+
+    if (!finalStudentName) {
+      setError("Please select or enter a student name.");
       return;
     }
     if (!selectedTeacher) {
@@ -148,7 +153,7 @@ function ClassForm({
     }
 
     const classData = {
-      studentName,
+      studentName: finalStudentName,
       teacherName: selectedTeacher,
       classType,
       className: className.trim(),
@@ -182,16 +187,58 @@ function ClassForm({
           {error && <div className="error-message">{error}</div>}
 
           <form onSubmit={handleSubmit}>
+            <div className="form-row">
+              <div className="form-group half">
+                <label>Teacher *</label>
+                <select value={selectedTeacher} onChange={(e) => setSelectedTeacher(e.target.value)}>
+                  <option value="">— Select Teacher —</option>
+                  {teacherList.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group half">
+                <label>Class Type</label>
+                <select value={classType} onChange={(e) => setClassType(e.target.value)}>
+                  <option value="Online">💻 Online</option>
+                  <option value="Face-to-Face">👤 Face-to-Face</option>
+                </select>
+              </div>
+            </div>
+
             {/* Student Selection */}
             <div className="form-group">
-              <label>Student *</label>
-              <div className="student-select-grid">
+              <label>{isF2F ? "Student Name / Memo *" : "Select Student *"}</label>
+              
+              {isF2F && (
+                <div className="manual-student-input-area">
+                  <input
+                    type="text"
+                    className="manual-student-input"
+                    value={manualStudentName}
+                    onChange={(e) => {
+                      setManualStudentName(e.target.value);
+                      // If typing matches an existing student, select them too
+                      const match = allStudents.find(s => s.name.toLowerCase() === e.target.value.trim().toLowerCase());
+                      if (match) setStudentName(match.name);
+                      else setStudentName("");
+                    }}
+                    placeholder="Type student name or memo..."
+                    autoFocus={!isEditing}
+                  />
+                  {manualStudentName && !allStudents.find(s => s.name === manualStudentName) && (
+                    <div className="manual-input-hint">Note: This will create a temporary entry for this slot.</div>
+                  )}
+                </div>
+              )}
+
+              <div className={`student-select-grid ${isF2F ? 'f2f-grid-collapsed' : ''}`}>
                 <button
                   type="button"
                   className={`student-select-card ${studentName === "" ? "selected" : ""}`}
                   onClick={() => handleStudentSelect("")}
                 >
-                  <span className="student-select-placeholder">— Select Student —</span>
+                  <span className="student-select-placeholder">— {isF2F ? "No Linked Student" : "Select Student"} —</span>
                 </button>
                 {availableStudents.map((s) => {
                   const studentKey = s.name || s;
@@ -216,25 +263,6 @@ function ClassForm({
                     </button>
                   );
                 })}
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group half">
-                <label>Teacher *</label>
-                <select value={selectedTeacher} onChange={(e) => setSelectedTeacher(e.target.value)}>
-                  <option value="">— Select Teacher —</option>
-                  {teacherList.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group half">
-                <label>Class Type</label>
-                <select value={classType} onChange={(e) => setClassType(e.target.value)}>
-                  <option value="Online">💻 Online</option>
-                  <option value="Face-to-Face">👤 Face-to-Face</option>
-                </select>
               </div>
             </div>
 
