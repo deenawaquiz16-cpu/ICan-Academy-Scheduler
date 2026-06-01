@@ -533,22 +533,6 @@ function ManageStudents({ onBack }) {
           allTeachersList={allTeachersList}
         />
 
-        {/* Class Type Tabs */}
-        <div className="class-type-tabs">
-          <button
-            className={`tab-btn ${activeTab === "all" ? "active" : ""}`}
-            onClick={() => setActiveTab("all")}
-          >
-            📋 All Students <span className="tab-count">({students.filter(s => !s.memo).length})</span>
-          </button>
-          <button
-            className={`tab-btn ${activeTab === "online" ? "active" : ""}`}
-            onClick={() => setActiveTab("online")}
-          >
-            💻 Online <span className="tab-count">({students.filter((s) => s.classType === "online" && !s.memo).length})</span>
-          </button>
-        </div>
-
         {/* Search & Filters */}
         <div className="student-filters">
           <div className="filter-group">
