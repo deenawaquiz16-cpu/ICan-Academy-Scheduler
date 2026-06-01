@@ -1138,11 +1138,11 @@ body {
 }
 
 .manage-section {
-  max-width: 98%;
+  max-width: 99%;
   margin: 0 auto 2rem;
   background: var(--surface);
   border-radius: var(--radius);
-  padding: 1.5rem;
+  padding: 2rem;
   box-shadow: var(--shadow);
 }
 
