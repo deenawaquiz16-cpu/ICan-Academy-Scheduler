@@ -137,10 +137,13 @@ function ClassForm({
 
     if (!finalStudentName) {
       setError("Please select or enter a student name.");
+      // Scroll to top to show error
+      document.querySelector(".modal-content")?.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     if (!selectedTeacher) {
       setError("Please select a teacher.");
+      document.querySelector(".modal-content")?.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -148,6 +151,7 @@ function ClassForm({
       const conflictSlot = checkOverlap(d, isEditing ? editingClass.timeKey : null);
       if (conflictSlot) {
         setError(`Schedule conflict on ${d}. A class already occupies this time range.`);
+        document.querySelector(".modal-content")?.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
     }
@@ -207,10 +211,12 @@ function ClassForm({
             </div>
 
             {/* Student Selection */}
-            <div className="form-group">
-              <label>{isF2F ? "Student Name / Memo *" : "Select Student *"}</label>
+            <div className="form-group highlight-group">
+              <label style={{ fontWeight: '800', fontSize: '1rem', color: 'var(--primary)' }}>
+                {isF2F ? "Student Name / Memo *" : "Select Student *"}
+              </label>
               
-              {isF2F && (
+              {isF2F ? (
                 <div className="manual-student-input-area">
                   <input
                     type="text"
@@ -218,51 +224,72 @@ function ClassForm({
                     value={manualStudentName}
                     onChange={(e) => {
                       setManualStudentName(e.target.value);
-                      // If typing matches an existing student, select them too
                       const match = allStudents.find(s => s.name.toLowerCase() === e.target.value.trim().toLowerCase());
                       if (match) setStudentName(match.name);
                       else setStudentName("");
                     }}
                     placeholder="Type student name or memo..."
                     autoFocus={!isEditing}
+                    required
                   />
                   {manualStudentName && !allStudents.find(s => s.name === manualStudentName) && (
-                    <div className="manual-input-hint">Note: This will create a temporary entry for this slot.</div>
+                    <div className="manual-input-hint">New entry will be created.</div>
                   )}
                 </div>
+              ) : (
+                <div className="student-select-grid">
+                  <button
+                    type="button"
+                    className={`student-select-card ${studentName === "" ? "selected" : ""}`}
+                    onClick={() => handleStudentSelect("")}
+                  >
+                    <span className="student-select-placeholder">— Select Student —</span>
+                  </button>
+                  {availableStudents.map((s) => {
+                    const studentKey = s.name || s;
+                    const studentData = allStudents.find((st) => st.name === studentKey) || {};
+                    const isSelected = studentName === studentKey;
+                    const studentStatus = studentData.status || "active";
+                    return (
+                      <button
+                        key={studentKey}
+                        type="button"
+                        className={`student-select-card ${isSelected ? "selected" : ""}`}
+                        onClick={() => handleStudentSelect(studentKey)}
+                      >
+                        <div className="student-select-info">
+                          <span className="student-select-english">{studentKey}</span>
+                        </div>
+                        <div className="student-select-meta">
+                          <span className={`student-status-badge student-status-${studentStatus}`}>
+                            {studentStatus === "active" ? "🟢" : studentStatus === "on-break" ? "🟡" : "🔴"}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
+            </div>
 
-              <div className={`student-select-grid ${isF2F ? 'f2f-grid-collapsed' : ''}`}>
-                <button
-                  type="button"
-                  className={`student-select-card ${studentName === "" ? "selected" : ""}`}
-                  onClick={() => handleStudentSelect("")}
-                >
-                  <span className="student-select-placeholder">— {isF2F ? "No Linked Student" : "Select Student"} —</span>
-                </button>
-                {availableStudents.map((s) => {
-                  const studentKey = s.name || s;
-                  const studentData = allStudents.find((st) => st.name === studentKey) || {};
-                  const isSelected = studentName === studentKey;
-                  const studentStatus = studentData.status || "active";
-                  return (
-                    <button
-                      key={studentKey}
-                      type="button"
-                      className={`student-select-card ${isSelected ? "selected" : ""}`}
-                      onClick={() => handleStudentSelect(studentKey)}
-                    >
-                      <div className="student-select-info">
-                        <span className="student-select-english">{studentKey}</span>
-                      </div>
-                      <div className="student-select-meta">
-                        <span className={`student-status-badge student-status-${studentStatus}`}>
-                          {studentStatus === "active" ? "🟢" : studentStatus === "on-break" ? "🟡" : "🔴"}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
+            <div className="form-row">
+              <div className="form-group half">
+                <label>Class Name</label>
+                <input
+                  type="text"
+                  value={className}
+                  onChange={(e) => setClassName(e.target.value)}
+                  placeholder="e.g., Reading"
+                />
+              </div>
+              <div className="form-group half">
+                <label>Book</label>
+                <input
+                  type="text"
+                  value={book}
+                  onChange={(e) => setBook(e.target.value)}
+                  placeholder="e.g., Phonics 1"
+                />
               </div>
             </div>
 
