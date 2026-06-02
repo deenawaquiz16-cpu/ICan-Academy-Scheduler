@@ -408,9 +408,14 @@ function ManageStudents({ onBack }) {
         onClick={() => setEditingScheduleFor(studentId)}
         title="Click to edit schedule"
       >
-        <span className="summary-days">{daysStr}</span>
-        <span className="summary-at">@</span>
-        <span className="summary-time">{startTimeLabel} – {endTimeLabel}</span>
+        <div className="summary-main">
+          <span className="summary-days">{daysStr}</span>
+          <div className="summary-divider"></div>
+          <div className="summary-time-wrapper">
+            <span className="summary-clock-icon">🕒</span>
+            <span className="summary-time">{startTimeLabel} – {endTimeLabel}</span>
+          </div>
+        </div>
         <span className="edit-icon-small">✏️</span>
       </div>
     );
