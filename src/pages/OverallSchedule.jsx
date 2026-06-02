@@ -53,7 +53,7 @@ function OverallSchedule({ onBack }) {
           Object.entries(daySched).forEach(([timeKey, slotData]) => {
             const scheduleId = slotData.scheduleId;
             if (scheduleId) {
-              const sessionKey = `${teacher}-${day}-${scheduleId}`;
+              const sessionKey = `${teacher}-${scheduleId}`;
               if (!seenSessions.has(sessionKey)) {
                 count++;
                 seenSessions.add(sessionKey);

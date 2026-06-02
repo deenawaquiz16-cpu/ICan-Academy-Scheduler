@@ -27,14 +27,7 @@ function App() {
       let totalClasses = 0;
       students.filter(s => s.status === 'active').forEach(student => {
         if (student.schedules && Array.isArray(student.schedules)) {
-          student.schedules.forEach(sched => {
-            if (sched.days) {
-              const days = Array.isArray(sched.days) 
-                ? sched.days 
-                : (typeof sched.days === 'string' ? (sched.days.match(/.{1,3}/g) || []) : []);
-              totalClasses += days.length;
-            }
-          });
+          totalClasses += student.schedules.length;
         }
       });
 
