@@ -136,17 +136,6 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
                   ))}
                 </select>
               </div>
-              <div className="modal-field">
-                <label>Class Type</label>
-                <select
-                  value={form.classType}
-                  onChange={(e) => setForm({ ...form, classType: e.target.value })}
-                >
-                  {CLASS_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>{t.icon} {t.label}</option>
-                  ))}
-                </select>
-              </div>
             </div>
 
             <div className="modal-field-row">
@@ -696,20 +685,6 @@ function ManageStudents({ onBack }) {
                         placeholder="Class name"
                       />
                     </td>
-                    <td className="col-class-type">
-                      <select
-                        className="class-type-inline-select"
-                        value={s.classType || "face-to-face"}
-                        onChange={(e) => {
-                          updateStudent(s.id, { classType: e.target.value });
-                          setStudents(sortStudentsFn(loadStudents(), sortBy));
-                        }}
-                      >
-                        {CLASS_TYPES.map((t) => (
-                          <option key={t.value} value={t.value}>{t.icon} {t.label}</option>
-                        ))}
-                      </select>
-                    </td>
                     <td className="col-schedule">
                       <div className="schedule-cell-container">
                         {formatSchedule(s.schedules, s.id)}
@@ -823,6 +798,31 @@ function ManageStudents({ onBack }) {
                           {savedRow === s.id ? "✓ Saved" : "💾 Save Changes"}
                         </button>
                         <button className="delete-row-btn" onClick={() => handleDelete(s.id, s.name)} title="Delete student">
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {filteredStudents.length === 0 && !isAdding && (
+            <p className="empty-list-msg">
+              {students.length === 0
+                ? 'No students added yet. Click "+ Add Student" to begin.'
+                : "No students match your filters."}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default ManageStudents;
+)} title="Delete student">
                           🗑️
                         </button>
                       </div>
