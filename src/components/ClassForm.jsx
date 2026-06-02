@@ -272,27 +272,6 @@ function ClassForm({
               )}
             </div>
 
-            <div className="form-row">
-              <div className="form-group half">
-                <label>Class Name</label>
-                <input
-                  type="text"
-                  value={className}
-                  onChange={(e) => setClassName(e.target.value)}
-                  placeholder="e.g., Reading"
-                />
-              </div>
-              <div className="form-group half">
-                <label>Book</label>
-                <input
-                  type="text"
-                  value={book}
-                  onChange={(e) => setBook(e.target.value)}
-                  placeholder="e.g., Phonics 1"
-                />
-              </div>
-            </div>
-
             {/* NEW TIME SELECTION UI */}
             <div className="form-group">
               <label>Start Time</label>
@@ -332,6 +311,27 @@ function ClassForm({
               <div className="preview-time">
                 <span className="preview-day">{selectedDays.length === 1 ? selectedDays[0] : selectedDays.map(d => d.slice(0,3)).join(", ")}</span>
                 <span className="preview-range">{startTimeLabel} – {displayEndTime}</span>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group half">
+                <label>Class Name</label>
+                <input
+                  type="text"
+                  value={className}
+                  onChange={(e) => setClassName(e.target.value)}
+                  placeholder="e.g., Reading"
+                />
+              </div>
+              <div className="form-group half">
+                <label>Book</label>
+                <input
+                  type="text"
+                  value={book}
+                  onChange={(e) => setBook(e.target.value)}
+                  placeholder="e.g., Phonics 1"
+                />
               </div>
             </div>
 
