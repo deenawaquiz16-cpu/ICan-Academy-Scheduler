@@ -148,115 +148,130 @@ function SchedulePage({ teacherName, onBack }) {
   };
 
   const handleSaveClass = (classData) => {
-    // 1. Find the student or create a placeholder for manual entries
-    let students = loadStudents();
-    let student = students.find(s => s.name === classData.studentName);
-    
-    if (!student && classData.studentName) {
-      // Create a student for manual/f2f memos
-      const updatedList = addStudent(classData.studentName);
-      student = updatedList.find(s => s.name === classData.studentName);
+    try {
+      // 1. Find the student or create a placeholder for manual entries
+      let students = loadStudents();
+      let student = students.find(s => s.name === classData.studentName);
+      
+      if (!student && classData.studentName) {
+        // Create a student for manual/f2f memos
+        const updatedList = addStudent(classData.studentName);
+        student = updatedList.find(s => s.name === classData.studentName);
+        if (student) {
+          updateStudent(student.id, { memo: true });
+        }
+      }
+
       if (student) {
-        updateStudent(student.id, { memo: true });
+        // Update student's main info
+        updateStudent(student.id, {
+          currentTeacher: classData.teacherName,
+          classType: classData.classType === "Online" ? "online" : "face-to-face",
+          className: classData.className,
+          book: classData.book
+        });
+
+        const scheduleEntry = {
+          days: [classData.day],
+          timeSlot: classData.timeKey,
+          duration: classData.duration,
+          className: classData.className,
+          book: classData.book,
+          classType: classData.classType === "Online" ? "online" : "face-to-face",
+        };
+
+        if (editingClass && editingClass.scheduleId) {
+          // Update existing schedule entry
+          editStudentSchedule(student.id, editingClass.scheduleId, scheduleEntry);
+        } else {
+          // Add new schedule entry
+          addScheduleToStudent(student.id, scheduleEntry);
+        }
       }
+
+      // Refresh local state from the newly synced data
+      setSchedules(syncStudentsToTeachers());
+      setFormOpen(false);
+      setEditingClass(null);
+      setSelectedCell(null);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error("Error saving class:", err);
+      setWarning("An error occurred while saving the class. Please try again.");
     }
-
-    if (student) {
-      // Update student's main info
-      updateStudent(student.id, {
-        currentTeacher: classData.teacherName,
-        classType: classData.classType === "Online" ? "online" : "face-to-face",
-        className: classData.className,
-        book: classData.book
-      });
-
-      const scheduleEntry = {
-        days: [classData.day],
-        timeSlot: classData.timeKey,
-        duration: classData.duration,
-        className: classData.className,
-        book: classData.book,
-        classType: classData.classType === "Online" ? "online" : "face-to-face",
-      };
-
-      if (editingClass && editingClass.scheduleId) {
-        // Update existing schedule entry
-        editStudentSchedule(student.id, editingClass.scheduleId, scheduleEntry);
-      } else {
-        // Add new schedule entry
-        addScheduleToStudent(student.id, scheduleEntry);
-      }
-    }
-
-    // Refresh local state from the newly synced data
-    setSchedules(syncStudentsToTeachers());
-    setFormOpen(false);
-    setEditingClass(null);
-    setSelectedCell(null);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
   };
 
   const handleDeleteClass = (day, timeKey) => {
-    const cls = teacherSchedule[day]?.[timeKey];
-    if (cls && cls.scheduleId) {
-      const students = loadStudents();
-      const student = students.find(s => s.name === cls.studentName);
-      if (student) {
-        deleteStudentSchedule(student.id, cls.scheduleId);
+    try {
+      const cls = teacherSchedule[day]?.[timeKey];
+      if (cls && cls.scheduleId) {
+        const students = loadStudents();
+        const student = students.find(s => s.name === cls.studentName);
+        if (student) {
+          deleteStudentSchedule(student.id, cls.scheduleId);
+        }
       }
-    }
 
-    // Refresh local state from the newly synced data
-    setSchedules(syncStudentsToTeachers());
-    setFormOpen(false);
-    setEditingClass(null);
-    setSelectedCell(null);
+      // Refresh local state from the newly synced data
+      setSchedules(syncStudentsToTeachers());
+      setFormOpen(false);
+      setEditingClass(null);
+      setSelectedCell(null);
+    } catch (err) {
+      console.error("Error deleting class:", err);
+      setWarning("An error occurred while deleting the class.");
+    }
   };
 
   const handleMultiDaySave = (days, timeSlot, classData) => {
-    let students = loadStudents();
-    let student = students.find(s => s.name === classData.studentName);
-    
-    if (!student && classData.studentName) {
-      const updatedList = addStudent(classData.studentName);
-      student = updatedList.find(s => s.name === classData.studentName);
+    try {
+      let students = loadStudents();
+      let student = students.find(s => s.name === classData.studentName);
+      
+      if (!student && classData.studentName) {
+        const updatedList = addStudent(classData.studentName);
+        student = updatedList.find(s => s.name === classData.studentName);
+        if (student) {
+          updateStudent(student.id, { memo: true });
+        }
+      }
+
       if (student) {
-        updateStudent(student.id, { memo: true });
+        updateStudent(student.id, {
+          currentTeacher: classData.teacherName,
+          classType: classData.classType === "Online" ? "online" : "face-to-face",
+          className: classData.className,
+          book: classData.book
+        });
+
+        const scheduleEntry = {
+          days: days,
+          timeSlot: timeSlot.key,
+          duration: classData.duration,
+          className: classData.className,
+          book: classData.book,
+          classType: classData.classType === "Online" ? "online" : "face-to-face",
+        };
+
+        if (editingClass && editingClass.scheduleId) {
+          editStudentSchedule(student.id, editingClass.scheduleId, scheduleEntry);
+        } else {
+          addScheduleToStudent(student.id, scheduleEntry);
+        }
       }
+
+      // Refresh local state from the newly synced data
+      setSchedules(syncStudentsToTeachers());
+      setFormOpen(false);
+      setEditingClass(null);
+      setSelectedCell(null);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error("Error saving multi-day class:", err);
+      setWarning("An error occurred while saving the class. Please try again.");
     }
-
-    if (student) {
-      updateStudent(student.id, {
-        currentTeacher: classData.teacherName,
-        classType: classData.classType === "Online" ? "online" : "face-to-face",
-        className: classData.className,
-        book: classData.book
-      });
-
-      const scheduleEntry = {
-        days: days,
-        timeSlot: timeSlot.key,
-        duration: classData.duration,
-        className: classData.className,
-        book: classData.book,
-        classType: classData.classType === "Online" ? "online" : "face-to-face",
-      };
-
-      if (editingClass && editingClass.scheduleId) {
-        editStudentSchedule(student.id, editingClass.scheduleId, scheduleEntry);
-      } else {
-        addScheduleToStudent(student.id, scheduleEntry);
-      }
-    }
-
-    // Refresh local state from the newly synced data
-    setSchedules(syncStudentsToTeachers());
-    setFormOpen(false);
-    setEditingClass(null);
-    setSelectedCell(null);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
   };
 
   const handleSaveAllChanges = () => {

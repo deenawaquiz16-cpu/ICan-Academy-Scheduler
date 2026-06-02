@@ -137,13 +137,23 @@ function ClassForm({
 
     if (!finalStudentName) {
       setError("Please select or enter a student name.");
-      // Scroll to top to show error
       document.querySelector(".modal-content")?.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     if (!selectedTeacher) {
       setError("Please select a teacher.");
       document.querySelector(".modal-content")?.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (selectedDays.length === 0) {
+      setError("Please select at least one day.");
+      document.querySelector(".modal-content")?.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    const currentSlot = TIME_SLOTS.find(s => s.key === startTimeKey);
+    if (!currentSlot) {
+      setError("Invalid start time selected.");
       return;
     }
 
@@ -168,7 +178,6 @@ function ClassForm({
     if (selectedDays.length === 1) {
       onSave({ ...classData, day: selectedDays[0], timeKey: startTimeKey });
     } else {
-      const currentSlot = TIME_SLOTS.find(s => s.key === startTimeKey);
       onMultiDaySave(selectedDays, currentSlot, classData);
     }
   };
@@ -230,7 +239,6 @@ function ClassForm({
                     }}
                     placeholder="Type student name or memo..."
                     autoFocus={!isEditing}
-                    required
                   />
                   {manualStudentName && !allStudents.find(s => s.name === manualStudentName) && (
                     <div className="manual-input-hint">New entry will be created.</div>
