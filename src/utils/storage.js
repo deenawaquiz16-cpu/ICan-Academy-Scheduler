@@ -1,3 +1,5 @@
+import { getOccupiedSlots, TIME_SLOTS } from "./timeSlots";
+
 const TEACHERS_KEY = "english-academy-teachers";
 const STUDENTS_KEY = "english-academy-students";
 const SCHEDULES_KEY = "english-academy-schedules";
@@ -495,7 +497,7 @@ export function syncStudentsToTeachers() {
 
           // Use 08:00 as default start key
           const startKey = sched.timeSlot || "08:00";
-          const occupied = getOccupiedSlotsForSync(startKey, sched.duration || 25);
+          const occupied = getOccupiedSlots(startKey, sched.duration || 25);
 
           occupied.forEach((slotKey) => {
             newSchedules[teacherName][day][slotKey] = {
@@ -519,69 +521,6 @@ export function syncStudentsToTeachers() {
     console.error("Error in syncStudentsToTeachers:", err);
     return loadSchedules();
   }
-}
-
-// Helper: get occupied slots (duplicated from timeSlots to avoid circular import)
-function getOccupiedSlotsForSync(startKey, duration) {
-  const DURATIONS = [
-    { label: "25 min", value: 25, slots: 1 },
-    { label: "50 min (1 hr)", value: 50, slots: 2 },
-    { label: "100 min (2 hrs)", value: 100, slots: 4 },
-  ];
-
-  const TIME_SLOTS = generateTimeSlotsForSync();
-
-  const durationConfig = DURATIONS.find((d) => d.value === duration);
-  if (!durationConfig) return [startKey];
-
-  const startIndex = TIME_SLOTS.findIndex((s) => s.key === startKey);
-  if (startIndex === -1) return [startKey];
-
-  const occupied = [];
-  for (let i = 0; i < durationConfig.slots; i++) {
-    const idx = startIndex + i;
-    if (idx < TIME_SLOTS.length && !TIME_SLOTS[idx].isLunch) {
-      occupied.push(TIME_SLOTS[idx].key);
-    }
-  }
-  return occupied;
-}
-
-function generateTimeSlotsForSync() {
-  const slots = [];
-  let hour = 8;
-  let minute = 0;
-
-  while (hour < 24) {
-    if (hour === 12 && minute === 0) {
-      slots.push({ start: "12:00 PM", end: "1:00 PM", label: "12:00 PM", isLunch: true, key: "12:00" });
-      hour = 13;
-      minute = 0;
-      continue;
-    }
-
-    const endMinute = minute + 25;
-    let endMin = endMinute;
-    if (endMin >= 60) {
-      endMin = endMin % 60;
-    }
-
-    const period = hour >= 12 ? "PM" : "AM";
-    const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-    const displayMinute = minute.toString().padStart(2, "0");
-    const startTime = `${displayHour}:${displayMinute} ${period}`;
-    const key = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
-
-    slots.push({ start: startTime, end: "", label: startTime, isLunch: false, key });
-
-    minute += 30;
-    if (minute >= 60) {
-      hour += Math.floor(minute / 60);
-      minute = minute % 60;
-    }
-  }
-
-  return slots;
 }
 
 // ===== TRASH / RECYCLE BIN =====
