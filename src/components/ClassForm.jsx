@@ -335,27 +335,6 @@ function ClassForm({
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group half">
-                <label>Class Name</label>
-                <input
-                  type="text"
-                  value={className}
-                  onChange={(e) => setClassName(e.target.value)}
-                  placeholder="e.g., ESL 101"
-                />
-              </div>
-              <div className="form-group half">
-                <label>Book</label>
-                <input
-                  type="text"
-                  value={book}
-                  onChange={(e) => setBook(e.target.value)}
-                  placeholder="e.g., Grammar in Use"
-                />
-              </div>
-            </div>
-
             <div className="form-group">
               <label>Apply to Multiple Days</label>
               <div className="day-checkboxes">
