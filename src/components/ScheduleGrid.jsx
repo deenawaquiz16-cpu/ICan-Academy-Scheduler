@@ -61,6 +61,10 @@ function ScheduleGrid({
                 </td>
                 {DAYS.map((day) => {
                   const cellKey = `${day}-${slot.key}`;
+                  
+                  // CRITICAL FIX: If this cell is already covered by a rowspan from a previous row, 
+                  // we MUST return null so the table doesn't shift left, but we also need to ensure 
+                  // the renderedCells set is being checked correctly.
                   if (renderedCells.has(cellKey)) return null;
 
                   const blocked = isBlocked(day, slot.key);
