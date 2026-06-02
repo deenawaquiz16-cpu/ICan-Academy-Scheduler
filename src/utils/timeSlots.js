@@ -83,7 +83,8 @@ export function getTimeSlotIndex(key) {
 
 // Get time slots that a class spans given a start key and duration
 export function getOccupiedSlots(startKey, duration) {
-  const durationConfig = DURATIONS.find((d) => d.value === duration);
+  const durNum = Number(duration);
+  const durationConfig = DURATIONS.find((d) => d.value === durNum);
   if (!durationConfig) return [startKey];
 
   const startIndex = getTimeSlotIndex(startKey);
