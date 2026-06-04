@@ -622,6 +622,3 @@ export function emptyTrash() {
 export function getTrashCount() {
   return loadTrash().length;
 }
-xport function getTrashCount() {
-  return loadTrash().length;
-}
