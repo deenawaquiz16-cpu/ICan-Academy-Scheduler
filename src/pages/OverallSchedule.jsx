@@ -81,29 +81,25 @@ function OverallSchedule({ onBack }) {
           {slot.isLunch ? "BREAK" : slot.label}
         </td>
         {teacherList.map((teacher) => {
-          const classInfo = getClassForCell(teacher, day, slot.key);
+          const classInfo = teacherScheduleMap[teacher]?.[day]?.[slot.key];
           
-          // Solid Grid: Check if this slot is a continuation of a class
-          const teacherSched = teacherScheduleMap[teacher]?.[day] || {};
-          let isContinuation = false;
-          let parentClass = null;
-
-          if (!classInfo || slot.isLunch) {
-            for (const [startKey, cls] of Object.entries(teacherSched)) {
-              const occupied = getOccupiedSlots(startKey, cls.duration || 25);
-              if (startKey !== slot.key && occupied.includes(slot.key)) {
-                isContinuation = true;
-                parentClass = cls;
-                break;
-              }
-            }
-          }
+          // Solid Grid: A class "starts" a block if it's the true start OR first after lunch
+          const isStartOfBlock = classInfo && (
+            classInfo.startKey === slot.key || 
+            (slot.key === "13:00" && classInfo.startKey < "12:00")
+          );
+          
+          const isContinuation = classInfo && !isStartOfBlock;
 
           // 1. Class Start Cell
-          if (classInfo && !slot.isLunch) {
-            const studentInfo = getStudentInfo(classInfo.studentName);
-            const endTime = getClassEndTime(slot.key, classInfo.duration || 25);
-            const isOnline = classInfo.classType?.toLowerCase() === "online";
+          if (isStartOfBlock && !slot.isLunch) {
+            // Re-run start-of-block specific logic for rowSpan and data
+            const blockInfo = getClassForCell(teacher, day, slot.key);
+            if (!blockInfo) return null;
+
+            const studentInfo = getStudentInfo(blockInfo.studentName);
+            const endTime = getClassEndTime(slot.key, blockInfo.duration || 25);
+            const isOnline = blockInfo.classType?.toLowerCase() === "online";
             const typeClass = isOnline ? "online" : "f2f";
 
             return (
@@ -114,7 +110,7 @@ function OverallSchedule({ onBack }) {
                     {studentInfo.className && <span className="class-badge">{studentInfo.className}</span>}
                     <span className="class-time">{slot.start}-{endTime}</span>
                     <span className={`type-badge ${typeClass}`}>
-                      {isOnline ? "💻" : "👤"} {classInfo.classType}
+                      {isOnline ? "💻" : "👤"} {blockInfo.classType}
                     </span>
                   </div>
                 </div>
@@ -124,7 +120,7 @@ function OverallSchedule({ onBack }) {
 
           // 2. Class Continuation Cell
           if (isContinuation && !slot.isLunch) {
-            const typeClass = parentClass.classType?.toLowerCase() === "online" ? "online" : "f2f";
+            const typeClass = classInfo.classType?.toLowerCase() === "online" ? "online" : "f2f";
             return (
               <td key={teacher} className={`class-cell ${typeClass} class-continuation`}></td>
             );

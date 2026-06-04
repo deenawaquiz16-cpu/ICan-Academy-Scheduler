@@ -40,7 +40,7 @@ function ClassForm({
   const [studentName, setStudentName] = useState(editingClass?.studentName || "");
   const [manualStudentName, setManualStudentName] = useState(editingClass?.studentName || "");
   const [selectedTeacher, setSelectedTeacher] = useState(editingClass?.teacherName || teacherName);
-  const [classType, setClassType] = useState(editingClass?.classType || "Online");
+  const [classType, setClassType] = useState(editingClass?.classType?.toLowerCase() || "online");
   const [duration, setDuration] = useState(editingClass?.duration || defaultDuration || 25);
   const [className, setClassName] = useState(editingClass?.className || "");
   const [book, setBook] = useState(editingClass?.book || "");
@@ -70,7 +70,7 @@ function ClassForm({
   };
 
   const isEditing = !!editingClass;
-  const isF2F = classType === "Face-to-Face";
+  const isF2F = classType === "face-to-face";
   
   const startTimeLabel = TIME_SLOTS.find(s => s.key === startTimeKey)?.start || "";
   const displayEndTime = getClassEndTime(startTimeKey, duration);

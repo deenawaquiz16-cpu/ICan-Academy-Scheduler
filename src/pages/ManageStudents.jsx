@@ -5,6 +5,7 @@ import {
   addStudent,
   deleteStudent,
   updateStudent,
+  addScheduleToStudent,
   restoreFromTrash,
   permanentlyDeleteFromTrash,
 } from "../utils/storage";
@@ -46,9 +47,17 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
   const [form, setForm] = useState({
     name: "", gradeLevel: "", classType: "online", currentTeacher: "",
     startDate: new Date().toISOString().split("T")[0], endDate: "", className: "", book: "",
+    days: [], timeSlot: "08:00", duration: 25, previousTeacher: ""
   });
 
   if (!isOpen) return null;
+
+  const handleDayToggle = (d) => {
+    setForm(prev => ({
+      ...prev,
+      days: prev.days.includes(d) ? prev.days.filter(x => x !== d) : [...prev.days, d]
+    }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -59,7 +68,7 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content" style={{ maxWidth: '550px' }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>🎓 Add New Student</h2>
           <button className="modal-close" onClick={onClose}>×</button>
@@ -70,6 +79,7 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
               <label>Student Name *</label>
               <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. John Doe" autoFocus required />
             </div>
+
             <div className="modal-field-row">
               <div className="modal-field">
                 <label>Grade</label>
@@ -85,13 +95,47 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
                 </select>
               </div>
             </div>
-            <div className="modal-field">
-              <label>Current Teacher</label>
-              <select value={form.currentTeacher} onChange={(e) => setForm({ ...form, currentTeacher: e.target.value })}>
-                <option value="">— Select Teacher —</option>
-                {allTeachersList.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
+
+            <div className="modal-field-row">
+              <div className="modal-field">
+                <label>Current Teacher</label>
+                <select value={form.currentTeacher} onChange={(e) => setForm({ ...form, currentTeacher: e.target.value })}>
+                  <option value="">— Select Teacher —</option>
+                  {allTeachersList.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="modal-field">
+                <label>Previous Teacher</label>
+                <input type="text" value={form.previousTeacher} onChange={(e) => setForm({ ...form, previousTeacher: e.target.value })} placeholder="Teacher name" />
+              </div>
             </div>
+
+            <div className="modal-field" style={{marginTop: '10px'}}>
+              <label>Schedule (Days)</label>
+              <div className="day-checkboxes" style={{display: 'flex', flexWrap: 'wrap', gap: '6px'}}>
+                {DAYS.map(d => (
+                  <button key={d} type="button" className={`day-pill ${form.days.includes(d) ? 'active' : ''}`} onClick={() => handleDayToggle(d)} style={{padding: '4px 10px', fontSize: '12px', border: '1px solid #ddd', borderRadius: '20px', background: form.days.includes(d) ? '#111' : '#fff', color: form.days.includes(d) ? '#fff' : '#111', cursor: 'pointer'}}>
+                    {d.slice(0,3)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="modal-field-row">
+              <div className="modal-field">
+                <label>Start Time</label>
+                <select value={form.timeSlot} onChange={(e) => setForm({ ...form, timeSlot: e.target.value })}>
+                  {TIME_SLOTS.filter(s => !s.isLunch).map(s => <option key={s.key} value={s.key}>{s.start}</option>)}
+                </select>
+              </div>
+              <div className="modal-field">
+                <label>Duration</label>
+                <select value={form.duration} onChange={(e) => setForm({ ...form, duration: Number(e.target.value) })}>
+                  {DURATIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                </select>
+              </div>
+            </div>
+
             <div className="modal-field-row">
                <div className="modal-field">
                  <label>Start Date</label>
@@ -147,10 +191,23 @@ function ManageStudents({ onBack }) {
   };
 
   const formatSchedule = (schedules) => {
-    const sched = schedules?.[0] || { days: [], timeSlot: "08:00" };
-    const daysStr = sched.days?.length > 0 ? sched.days.map(d => DAY_SHORT[d] || d.slice(0,3)).join(", ") : "Not set";
-    const startTimeLabel = TIME_SLOTS.find(t => t.key === (sched.timeSlot || "08:00"))?.start || "N/A";
-    return <span style={{fontSize: '11px'}}>{daysStr} | {startTimeLabel}</span>;
+    if (!schedules || schedules.length === 0) return <span style={{fontSize: '11px', color: '#999'}}>Not set</span>;
+    
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {schedules.map((sched, i) => {
+          const daysStr = sched.days?.length > 0 
+            ? sched.days.map(d => DAY_SHORT[d] || d.slice(0,3)).join(", ") 
+            : "No days";
+          const startTimeLabel = TIME_SLOTS.find(t => t.key === (sched.timeSlot || "08:00"))?.start || "N/A";
+          return (
+            <div key={i} style={{fontSize: '10px', background: '#f0f4f8', padding: '2px 6px', borderRadius: '4px', border: '1px solid #d1d9e0'}}>
+              {daysStr} | {startTimeLabel}
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   return (
@@ -176,7 +233,35 @@ function ManageStudents({ onBack }) {
           </div>
         </div>
 
-        <StudentModal isOpen={isAdding} onClose={() => setIsAdding(false)} onAdd={(data) => { addStudent(data.name); setStudents(loadStudents()); }} allTeachersList={allTeachersList} />
+        <StudentModal 
+          isOpen={isAdding} 
+          onClose={() => setIsAdding(false)} 
+          onAdd={(data) => { 
+            const newStudents = addStudent(data.name);
+            const newId = newStudents[newStudents.length - 1].id;
+            
+            updateStudent(newId, {
+              gradeLevel: data.gradeLevel,
+              classType: data.classType,
+              currentTeacher: data.currentTeacher,
+              startDate: data.startDate,
+              endDate: data.endDate,
+              previousTeachers: data.previousTeacher ? [{ name: data.previousTeacher, date: new Date().toLocaleDateString() }] : []
+            });
+
+            if (data.days.length > 0) {
+              addScheduleToStudent(newId, {
+                days: data.days,
+                timeSlot: data.timeSlot,
+                duration: data.duration,
+                classType: data.classType
+              });
+            }
+            
+            setStudents(loadStudents()); 
+          }} 
+          allTeachersList={allTeachersList} 
+        />
 
         <div className="student-table-container">
           <table className="student-table complete-table">
@@ -240,3 +325,4 @@ function ManageStudents({ onBack }) {
 }
 
 export default ManageStudents;
+// Force build 2

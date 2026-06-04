@@ -75,24 +75,22 @@ function ScheduleGrid({
                 {DAYS.map((day) => {
                   const cellKey = `${day}-${slot.key}`;
                   const blocked = isBlocked(day, slot.key);
-                  const classInfo = getClassForCell(day, slot.key);
+                  const classInfo = schedule[day]?.[slot.key];
                   
-                  // Check if this slot is a continuation of a class that started earlier
-                  const daySchedule = schedule[day] || {};
-                  let isContinuation = false;
-                  let parentClass = null;
-
-                  for (const [startKey, cls] of Object.entries(daySchedule)) {
-                    const occupied = getOccupiedSlots(startKey, cls.duration || 25);
-                    if (startKey !== slot.key && occupied.includes(slot.key)) {
-                      isContinuation = true;
-                      parentClass = cls;
-                      break;
-                    }
-                  }
+                  // Solid Grid Rule: A class "starts" a block ONLY if the slot matches its true startKey
+                  // (OR if it's the first slot after lunch for a class that spans lunch)
+                  const isStartOfBlock = classInfo && (
+                    classInfo.startKey === slot.key || 
+                    (slot.key === "13:00" && classInfo.startKey < "12:00")
+                  );
+                  
+                  const isContinuation = classInfo && !isStartOfBlock;
 
                   // 1. Class Start Cell
-                  if (classInfo && classInfo.isStart && !slot.isLunch) {
+                  if (isStartOfBlock && !slot.isLunch) {
+                    const blockOccupied = getOccupiedSlots(classInfo.startKey, classInfo.duration || 25)
+                      .filter(k => (slot.key < "12:00" ? k < "12:00" : k >= "13:00"));
+
                     const isOnline = classInfo.classType?.toLowerCase() === "online";
                     const typeClass = isOnline ? "online" : "f2f";
                     const studentStatus = classInfo.studentStatus || "active";
@@ -122,7 +120,7 @@ function ScheduleGrid({
 
                   // 2. Class Continuation Cell
                   if (isContinuation && !slot.isLunch) {
-                    const typeClass = parentClass.classType?.toLowerCase() === "online" ? "online" : "f2f";
+                    const typeClass = classInfo.classType?.toLowerCase() === "online" ? "online" : "f2f";
                     return (
                       <td 
                         key={cellKey} 
@@ -150,7 +148,7 @@ function ScheduleGrid({
                     );
                   }
 
-                  // 4. Default Empty or Lunch Cell (ALWAYS RENDER A TD)
+                  // 4. Default Empty or Lunch Cell
                   const isFirstSelected = firstSelectedCell?.day === day && firstSelectedCell?.timeSlot?.key === slot.key;
                   return (
                     <td

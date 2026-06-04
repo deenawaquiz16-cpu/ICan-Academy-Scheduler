@@ -27,7 +27,9 @@ function App() {
       let totalClasses = 0;
       students.filter(s => s.status === 'active').forEach(student => {
         if (student.schedules && Array.isArray(student.schedules)) {
-          totalClasses += student.schedules.length;
+          // Only count classes that have at least one day assigned
+          const activeSchedules = student.schedules.filter(sched => sched.days && sched.days.length > 0);
+          totalClasses += activeSchedules.length;
         }
       });
 
