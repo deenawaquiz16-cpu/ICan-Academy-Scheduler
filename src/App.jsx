@@ -44,8 +44,8 @@ function App() {
   }, [view]); // Recalculate when navigating back to home or changing views
 
   useEffect(() => {
-    // Force a sync on load to ensure teacher schedules match student data
-    syncStudentsToTeachers();
+    // We no longer auto-sync on load to prevent manual grid changes from being overwritten
+    // syncStudentsToTeachers(); 
     setTrashCount(getTrashCount());
   }, []);
 

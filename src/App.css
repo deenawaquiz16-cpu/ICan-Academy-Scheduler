@@ -712,12 +712,40 @@ body {
 .schedule-cell {
   border: 1px solid #cbd5e1;
   padding: 1px;
-  height: 32px;
+  height: 44px;
   vertical-align: top;
   cursor: pointer;
   transition: all 0.1s ease;
   position: relative;
-  overflow: hidden;
+}
+
+/* Solid Grid: Remove borders between continuation cells */
+.class-start {
+  border-bottom: none !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.class-continuation {
+  border-top: none !important;
+  border-bottom: none !important;
+  border-radius: 0 !important;
+}
+
+.class-continuation:last-child,
+tr:last-child .class-continuation {
+  border-bottom: 1px solid #cbd5e1 !important;
+  border-bottom-left-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
+}
+
+/* Ensure the background color matches the parent class */
+.class-online.class-continuation {
+  background: #eef2ff;
+}
+
+.class-f2f.class-continuation {
+  background: #ecfdf5;
 }
 
 .schedule-cell:hover {

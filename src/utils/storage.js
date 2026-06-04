@@ -229,11 +229,11 @@ export function addStudent(name) {
   const data = loadStudents();
   data.push({
     id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-    name,
-    startDate: "",
+    name: name.trim(),
+    startDate: new Date().toISOString().split("T")[0],
     endDate: "",
     className: "",
-    classType: "face-to-face",
+    classType: "online",
     status: "active",
     gradeLevel: "",
     book: "",
@@ -246,15 +246,22 @@ export function addStudent(name) {
 }
 
 export function updateStudent(id, updates) {
-  const data = loadStudents();
-  const student = data.find((s) => s.id === id);
-  if (student) {
-    Object.assign(student, updates);
-    saveStudents(data);
-    // Sync changes to teacher schedules
-    syncStudentsToTeachers();
+  try {
+    const data = loadStudents();
+    const student = data.find((s) => s.id === id);
+    if (student) {
+      // Normalize classType if it's being updated
+      if (updates.classType) {
+        updates.classType = updates.classType.toLowerCase();
+      }
+      Object.assign(student, updates);
+      saveStudents(data);
+    }
+    return data;
+  } catch (err) {
+    console.error("Error updating student:", err);
+    return loadStudents();
   }
-  return data;
 }
 
 export function editStudent(id, newName) {
@@ -310,7 +317,6 @@ export function addScheduleToStudent(id, scheduleEntry) {
     scheduleEntry.id = scheduleEntry.id || Date.now().toString();
     student.schedules.push(scheduleEntry);
     saveStudents(data);
-    syncStudentsToTeachers();
   }
   return data;
 }
@@ -323,7 +329,6 @@ export function editStudentSchedule(id, scheduleId, updates) {
     if (schedule) {
       Object.assign(schedule, updates);
       saveStudents(data);
-      syncStudentsToTeachers();
     }
   }
   return data;
@@ -335,7 +340,6 @@ export function deleteStudentSchedule(id, scheduleId) {
   if (student && student.schedules) {
     student.schedules = student.schedules.filter((sc) => sc.id !== scheduleId);
     saveStudents(data);
-    syncStudentsToTeachers();
   }
   return data;
 }
@@ -488,14 +492,38 @@ export function syncStudentsToTeachers() {
         if (!sched || !sched.days) return;
         
         // Handle days as string (old format) or array (new format)
-        const daysToProcess = typeof sched.days === "string" 
-          ? sched.days.match(/.{1,3}/g) || [] 
-          : Array.isArray(sched.days) ? sched.days : [];
+        let daysToProcess = [];
+        if (Array.isArray(sched.days)) {
+          daysToProcess = sched.days;
+        } else if (typeof sched.days === "string") {
+          const raw = sched.days.trim().toLowerCase();
+          if (raw === "mwf") daysToProcess = ["Monday", "Wednesday", "Friday"];
+          else if (raw === "tth") daysToProcess = ["Tuesday", "Thursday"];
+          else if (raw === "daily") daysToProcess = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+          else if (raw === "weekend") daysToProcess = ["Saturday", "Sunday"];
+          else if (raw.includes(",")) daysToProcess = raw.split(",").map(d => d.trim());
+          else if (raw.includes(" ")) daysToProcess = raw.split(" ").map(d => d.trim());
+          else daysToProcess = raw.match(/[A-Z][a-z]+/g) || raw.match(/.{1,3}/g) || [raw];
+        }
+
+        const DAYS_MAP = {
+          "mon": "Monday", "tue": "Tuesday", "wed": "Wednesday", "thu": "Thursday", 
+          "fri": "Friday", "sat": "Saturday", "sun": "Sunday",
+          "monday": "Monday", "tuesday": "Tuesday", "wednesday": "Wednesday", 
+          "thursday": "Thursday", "friday": "Friday", "saturday": "Saturday", "sunday": "Sunday"
+        };
+        
+        daysToProcess = [...new Set(daysToProcess
+          .map(d => {
+            const key = d.toLowerCase().trim();
+            return DAYS_MAP[key] || null;
+          })
+          .filter(Boolean)
+        )];
 
         daysToProcess.forEach((day) => {
           if (!newSchedules[teacherName][day]) newSchedules[teacherName][day] = {};
 
-          // Use 08:00 as default start key
           const startKey = sched.timeSlot || "08:00";
           const occupied = getOccupiedSlots(startKey, sched.duration || 25);
 
@@ -503,12 +531,13 @@ export function syncStudentsToTeachers() {
             newSchedules[teacherName][day][slotKey] = {
               studentName: student.name,
               teacherName: teacherName,
-              classType: sched.classType || student.classType || "face-to-face",
+              classType: (sched.classType || student.classType || "online").toLowerCase(),
               className: sched.className || student.className || "",
               book: sched.book || student.book || "",
               duration: sched.duration || 25,
               studentStatus: student.status || "active",
               scheduleId: sched.id || "",
+              startKey: startKey,
             };
           });
         });
@@ -591,5 +620,8 @@ export function emptyTrash() {
 
 // Get trash count
 export function getTrashCount() {
+  return loadTrash().length;
+}
+xport function getTrashCount() {
   return loadTrash().length;
 }

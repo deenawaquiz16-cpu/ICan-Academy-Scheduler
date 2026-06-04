@@ -1,6 +1,6 @@
 import "../App.css";
 
-function HomePage({ onSelectCategory, onManageTeachers, onManageStudents, onOverallSchedule, onFindAvailability, onCalendar, onLiveView, stats }) {
+function HomePage({ onSelectCategory, onManageTeachers, onManageStudents, onOverallSchedule, onFindAvailability, onCalendar, stats }) {
   const { academyCount = 0, wfhCount = 0, totalStudents = 0, totalClasses = 0 } = stats || {};
   const totalTeachers = academyCount + wfhCount;
 
@@ -62,9 +62,6 @@ function HomePage({ onSelectCategory, onManageTeachers, onManageStudents, onOver
         </button>
         <button className="manage-link-btn" onClick={onFindAvailability}>
           🔍 Find Availability
-        </button>
-        <button className="manage-link-btn live-btn" onClick={onLiveView}>
-          📡 Live Data
         </button>
       </div>
     </div>

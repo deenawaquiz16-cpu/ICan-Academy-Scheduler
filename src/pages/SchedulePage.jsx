@@ -27,269 +27,141 @@ import { getOccupiedSlots, TIME_SLOTS } from "../utils/timeSlots";
 import "../App.css";
 
 function SchedulePage({ teacherName, onBack }) {
-  const [schedules, setSchedules] = useState(() => {
-    syncStudentsToTeachers();
-    return loadSchedules();
-  });
+  // CRITICAL: Removed auto-sync on load to prevent manual grid edits from being overwritten
+  const [schedules, setSchedules] = useState(() => loadSchedules());
   const [blocks, setBlocks] = useState(() => loadBlocks());
   const [formOpen, setFormOpen] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
   const [selectedCell, setSelectedCell] = useState(null);
-  const [firstSelectedCell, setFirstSelectedCell] = useState(null);
   const [saved, setSaved] = useState(false);
-
-  // Context menu state
   const [contextMenu, setContextMenu] = useState(null);
-
-  // Warning toast state
   const [warning, setWarning] = useState(null);
-
-  useEffect(() => {
-    // Already initialized in useState factory
-  }, []);
 
   const teacherSchedule = useMemo(() => schedules[teacherName] || {}, [schedules, teacherName]);
   const teacherBlocks = useMemo(() => blocks[teacherName] || {}, [blocks, teacherName]);
 
-  // Handle left-click on cell
   const handleCellClick = useCallback((day, timeSlot) => {
-    // Check if blocked
     if (isSlotBlocked(blocks, teacherName, day, timeSlot.key)) {
       setWarning("This time is unavailable.");
-      setFirstSelectedCell(null);
       return;
     }
-
     const existingClass = teacherSchedule[day]?.[timeSlot.key];
-    
-    // If clicking a cell that has a class, open it for editing
     if (existingClass) {
-      setEditingClass({ ...existingClass, day, timeKey: timeSlot.key, timeSlot });
+      // Use the startKey to ensure we open the original record
+      setEditingClass({ ...existingClass, day, timeKey: existingClass.startKey || timeSlot.key });
       setSelectedCell({ day, timeSlot });
-      setFirstSelectedCell(null);
       setFormOpen(true);
       return;
     }
-
-    // Single click opens the form immediately for a new class
     setEditingClass(null);
     setSelectedCell({ day, timeSlot, duration: 25 });
-    setFirstSelectedCell(null);
     setFormOpen(true);
   }, [teacherSchedule, blocks, teacherName]);
 
-  // Handle right-click on cell
   const handleCellRightClick = useCallback((day, timeSlot, event) => {
-    setFirstSelectedCell(null);
-    setContextMenu({
-      x: event.clientX,
-      y: event.clientY,
-      day,
-      timeSlot,
-    });
+    setContextMenu({ x: event.clientX, y: event.clientY, day, timeSlot });
   }, []);
-
-  // Context menu actions
-  const handleAddClass = () => {
-    if (!contextMenu) return;
-    const { day, timeSlot } = contextMenu;
-    setContextMenu(null);
-    setEditingClass(null);
-    setSelectedCell({ day, timeSlot });
-    setFormOpen(true);
-  };
-
-  const handleBlockSlot = () => {
-    if (!contextMenu) return;
-    const { day, timeSlot } = contextMenu;
-    setContextMenu(null);
-    setBlocks((prev) => {
-      const updated = { ...prev };
-      const result = blockSlot(updated, teacherName, day, timeSlot.key);
-      saveBlocks(result);
-      return result;
-    });
-  };
-
-  const handleUnblockSlot = () => {
-    if (!contextMenu) return;
-    const { day, timeSlot } = contextMenu;
-    setContextMenu(null);
-    setBlocks((prev) => {
-      const updated = { ...prev };
-      const result = unblockSlot(updated, teacherName, day, timeSlot.key);
-      saveBlocks(result);
-      return result;
-    });
-  };
-
-  const handleBlockDay = () => {
-    if (!contextMenu) return;
-    const { day } = contextMenu;
-    setContextMenu(null);
-    setBlocks((prev) => {
-      const updated = { ...prev };
-      const result = blockDay(updated, teacherName, day);
-      saveBlocks(result);
-      return result;
-    });
-  };
-
-  const handleUnblockDay = () => {
-    if (!contextMenu) return;
-    const { day } = contextMenu;
-    setContextMenu(null);
-    setBlocks((prev) => {
-      const updated = { ...prev };
-      const result = unblockDay(updated, teacherName, day);
-      saveBlocks(result);
-      return result;
-    });
-  };
 
   const handleSaveClass = (classData) => {
     try {
-      // 1. Find the student or create a placeholder for manual entries
-      let students = loadStudents();
-      let student = students.find(s => s.name === classData.studentName);
-      
-      if (!student && classData.studentName) {
-        // Create a student for manual/f2f memos
-        const updatedList = addStudent(classData.studentName);
-        student = updatedList.find(s => s.name === classData.studentName);
-        if (student) {
-          updateStudent(student.id, { memo: true });
+      setSchedules(prev => {
+        const updated = { ...prev };
+        const teacherSched = updated[teacherName] || (updated[teacherName] = {});
+        
+        // 1. If moving/editing, clear the OLD slots first
+        if (editingClass) {
+          const oldDaySched = teacherSched[editingClass.day] || {};
+          const oldOccupied = getOccupiedSlots(editingClass.timeKey, editingClass.duration || 25);
+          oldOccupied.forEach(k => delete oldDaySched[k]);
         }
-      }
 
-      if (student) {
-        // Update student's main info
-        updateStudent(student.id, {
-          currentTeacher: classData.teacherName,
-          classType: classData.classType === "Online" ? "online" : "face-to-face",
-          className: classData.className,
-          book: classData.book
+        // 2. SAVE NEW ENTRIES DIRECTLY TO GRID
+        const targetDaySched = teacherSched[classData.day] || (teacherSched[classData.day] = {});
+        const newOccupied = getOccupiedSlots(classData.timeKey, classData.duration || 25);
+        newOccupied.forEach(slotKey => {
+          targetDaySched[slotKey] = {
+            studentName: classData.studentName,
+            teacherName: teacherName,
+            classType: classData.classType,
+            className: classData.className,
+            book: classData.book,
+            duration: classData.duration,
+            startKey: classData.timeKey,
+            scheduleId: editingClass?.scheduleId || "manual-" + Date.now()
+          };
         });
 
-        const scheduleEntry = {
-          days: [classData.day],
-          timeSlot: classData.timeKey,
-          duration: classData.duration,
-          className: classData.className,
-          book: classData.book,
-          classType: classData.classType === "Online" ? "online" : "face-to-face",
-        };
+        saveSchedules(updated);
+        return updated;
+      });
 
-        if (editingClass && editingClass.scheduleId) {
-          // Update existing schedule entry
-          editStudentSchedule(student.id, editingClass.scheduleId, scheduleEntry);
-        } else {
-          // Add new schedule entry
-          addScheduleToStudent(student.id, scheduleEntry);
-        }
-      }
-
-      // Refresh local state from the newly synced data
-      setSchedules(syncStudentsToTeachers());
       setFormOpen(false);
       setEditingClass(null);
-      setSelectedCell(null);
       setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      console.error("Error saving class:", err);
-      setWarning("An error occurred while saving the class. Please try again.");
-    }
-  };
-
-  const handleDeleteClass = (day, timeKey) => {
-    try {
-      const cls = teacherSchedule[day]?.[timeKey];
-      if (cls && cls.scheduleId) {
-        const students = loadStudents();
-        const student = students.find(s => s.name === cls.studentName);
-        if (student) {
-          deleteStudentSchedule(student.id, cls.scheduleId);
-        }
-      }
-
-      // Refresh local state from the newly synced data
-      setSchedules(syncStudentsToTeachers());
-      setFormOpen(false);
-      setEditingClass(null);
-      setSelectedCell(null);
-    } catch (err) {
-      console.error("Error deleting class:", err);
-      setWarning("An error occurred while deleting the class.");
+      setWarning("Error saving class.");
     }
   };
 
   const handleMultiDaySave = (days, timeSlot, classData) => {
     try {
-      let students = loadStudents();
-      let student = students.find(s => s.name === classData.studentName);
-      
-      if (!student && classData.studentName) {
-        const updatedList = addStudent(classData.studentName);
-        student = updatedList.find(s => s.name === classData.studentName);
-        if (student) {
-          updateStudent(student.id, { memo: true });
-        }
-      }
+      setSchedules(prev => {
+        const updated = { ...prev };
+        const teacherSched = updated[teacherName] || (updated[teacherName] = {});
 
-      if (student) {
-        updateStudent(student.id, {
-          currentTeacher: classData.teacherName,
-          classType: classData.classType === "Online" ? "online" : "face-to-face",
-          className: classData.className,
-          book: classData.book
+        if (editingClass) {
+          const oldDaySched = teacherSched[editingClass.day] || {};
+          const oldOccupied = getOccupiedSlots(editingClass.timeKey, editingClass.duration || 25);
+          oldOccupied.forEach(k => delete oldDaySched[k]);
+        }
+
+        days.forEach(day => {
+          const daySched = teacherSched[day] || (teacherSched[day] = {});
+          const occupied = getOccupiedSlots(timeSlot.key, classData.duration || 25);
+          occupied.forEach(slotKey => {
+            daySched[slotKey] = {
+              ...classData,
+              startKey: timeSlot.key,
+              scheduleId: editingClass?.scheduleId || "manual-multi-" + Date.now()
+            };
+          });
         });
 
-        const scheduleEntry = {
-          days: days,
-          timeSlot: timeSlot.key,
-          duration: classData.duration,
-          className: classData.className,
-          book: classData.book,
-          classType: classData.classType === "Online" ? "online" : "face-to-face",
-        };
-
-        if (editingClass && editingClass.scheduleId) {
-          editStudentSchedule(student.id, editingClass.scheduleId, scheduleEntry);
-        } else {
-          addScheduleToStudent(student.id, scheduleEntry);
-        }
-      }
-
-      // Refresh local state from the newly synced data
-      setSchedules(syncStudentsToTeachers());
+        saveSchedules(updated);
+        return updated;
+      });
       setFormOpen(false);
       setEditingClass(null);
-      setSelectedCell(null);
       setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      console.error("Error saving multi-day class:", err);
-      setWarning("An error occurred while saving the class. Please try again.");
+      setWarning("Error saving multi-day class.");
     }
   };
 
-  const handleSaveAllChanges = () => {
-    saveSchedules(schedules);
-    saveBlocks(blocks);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleDeleteClass = (day, timeKey) => {
+    const classInfo = teacherSchedule[day]?.[timeKey];
+    if (!classInfo) return;
+
+    setSchedules(prev => {
+      const updated = { ...prev };
+      const daySched = updated[teacherName]?.[day] || {};
+      const occupied = getOccupiedSlots(classInfo.startKey || timeKey, classInfo.duration || 25);
+      occupied.forEach(k => delete daySched[k]);
+      saveSchedules(updated);
+      return updated;
+    });
+    setFormOpen(false);
+    setEditingClass(null);
   };
 
-  const handleDeleteTeacher = () => {
-    if (confirm(`Are you sure you want to permanently delete teacher "${teacherName}"?`)) {
-      const teachers = loadTeachers();
-      let category = "academy";
-      if (teachers.wfh.includes(teacherName)) category = "wfh";
-      
-      deleteTeacher(category, teacherName);
-      syncStudentsToTeachers();
-      onBack();
+  const handleResetGrid = () => {
+    if (confirm("Reset and Rebuild Grid? This will fix mixed-up columns by pulling fresh data from student records once.")) {
+      const refreshed = syncStudentsToTeachers();
+      setSchedules(refreshed);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     }
   };
 
@@ -297,76 +169,40 @@ function SchedulePage({ teacherName, onBack }) {
     <div className="schedule-page">
       <div className="schedule-header">
         <button className="back-btn" onClick={onBack}>← Back</button>
-        <div className="schedule-title-area">
-          <h1>{teacherName}</h1>
-          <button className="delete-teacher-header-btn" onClick={handleDeleteTeacher} title="Delete Teacher">
-            🗑️ Delete
-          </button>
+        <div className="teacher-info">
+          <h1>{teacherName}'s Schedule</h1>
+          <button className="reset-grid-btn" onClick={handleResetGrid} title="Fix mixed-up columns">🔄 Rebuild Grid</button>
         </div>
         <div className="header-actions">
-          {saved && <span className="saved-badge">✓ All Changes Saved</span>}
-          <button className="save-all-btn" onClick={handleSaveAllChanges}>
-            💾 Save Changes
-          </button>
+           {saved && <span className="save-toast">✓ Saved</span>}
+           <button className="save-all-btn" onClick={() => { saveSchedules(schedules); setSaved(true); setTimeout(()=>setSaved(false), 2000); }}>💾 Save All</button>
         </div>
       </div>
 
-      <div className="schedule-hint">
-        💡 <strong>Left-click</strong> a cell to add/edit a class. <strong>Right-click</strong> to block or unblock time.
-      </div>
+      <ScheduleGrid schedule={teacherSchedule} blocks={teacherBlocks} onCellClick={handleCellClick} onCellRightClick={handleCellRightClick} />
 
-      <ScheduleGrid
-        schedule={teacherSchedule}
-        blocks={teacherBlocks}
-        firstSelectedCell={firstSelectedCell}
-        onCellClick={handleCellClick}
-        onCellRightClick={handleCellRightClick}
-      />
-
-      {/* Class Form */}
       {formOpen && selectedCell && (
-        <ClassForm
-          editingClass={editingClass}
-          teacherName={teacherName}
-          day={selectedCell.day}
-          timeSlot={selectedCell.timeSlot}
-          defaultDuration={selectedCell.duration}
-          schedule={teacherSchedule}
-          onSave={handleSaveClass}
-          onDelete={handleDeleteClass}
-          onMultiDaySave={handleMultiDaySave}
-          onClose={() => {
-            setFormOpen(false);
-            setEditingClass(null);
-            setSelectedCell(null);
-          }}
+        <ClassForm 
+          editingClass={editingClass} 
+          teacherName={teacherName} 
+          day={selectedCell.day} 
+          timeSlot={selectedCell.timeSlot} 
+          schedule={teacherSchedule} 
+          onSave={handleSaveClass} 
+          onDelete={handleDeleteClass} 
+          onMultiDaySave={handleMultiDaySave} 
+          onClose={() => { setFormOpen(false); setEditingClass(null); }} 
         />
       )}
 
-      {/* Context Menu */}
       {contextMenu && (
-        <CellContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          day={contextMenu.day}
-          isBlocked={isSlotBlocked(blocks, teacherName, contextMenu.day, contextMenu.timeSlot.key)}
-          isDayBlocked={isDayBlocked(blocks, teacherName, contextMenu.day)}
-          onAddClass={handleAddClass}
-          onBlockSlot={handleBlockSlot}
-          onUnblockSlot={handleUnblockSlot}
-          onBlockDay={handleBlockDay}
-          onUnblockDay={handleUnblockDay}
-          onClose={() => setContextMenu(null)}
+        <CellContextMenu 
+          x={contextMenu.x} y={contextMenu.y} 
+          onAddClass={() => { setFormOpen(true); setContextMenu(null); }} 
+          onClose={() => setContextMenu(null)} 
         />
       )}
-
-      {/* Warning Toast */}
-      {warning && (
-        <WarningToast
-          message={warning}
-          onClose={() => setWarning(null)}
-        />
-      )}
+      {warning && <WarningToast message={warning} onClose={() => setWarning(null)} />}
     </div>
   );
 }

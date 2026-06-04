@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { DAYS, DURATIONS, getOccupiedSlots, TIME_SLOTS } from "../utils/timeSlots";
+import { DAYS, DURATIONS, getOccupiedSlots, TIME_SLOTS, getClassEndTime, getDayName } from "../utils/timeSlots";
 import { loadTeachers, loadStudents, getScheduledStudents } from "../utils/storage";
 import "../App.css";
 
@@ -56,17 +56,14 @@ function ClassForm({
     if (!isEditing && selectedName !== "") {
       const studentData = allStudents.find((s) => s.name === selectedName);
       if (studentData) {
-        if (studentData.classType) {
-          const normalizedType = studentData.classType === "online" ? "Online" : "Face-to-Face";
-          setClassType(normalizedType);
-        }
         if (studentData.className) setClassName(studentData.className);
         if (studentData.book) setBook(studentData.book);
         if (studentData.currentTeacher) setSelectedTeacher(studentData.currentTeacher);
         if (studentData.schedules && studentData.schedules.length > 0) {
           const firstSched = studentData.schedules[0];
           if (firstSched.duration) setDuration(firstSched.duration);
-          if (firstSched.days) setSelectedDays(firstSched.days);
+          // We DO NOT override selectedDays here. 
+          // The user clicked a specific day on the grid, and we must respect that.
         }
       }
     }
@@ -75,50 +72,29 @@ function ClassForm({
   const isEditing = !!editingClass;
   const isF2F = classType === "Face-to-Face";
   
-  // Custom display end time logic based on user request
-  const getDisplayEndTime = (startKey, dur) => {
-    const slotIdx = TIME_SLOTS.findIndex(s => s.key === startKey);
-    if (slotIdx === -1) return "";
-    
-    const startSlot = TIME_SLOTS[slotIdx];
-    const [h, m] = startSlot.key.split(":").map(Number);
-    
-    // Exact duration logic: End Time = Start Time + Duration
-    // For 100 min classes, add 10 min break (total 110 min)
-    let extraMinutes = dur;
-    if (dur === 100) extraMinutes = 110;
-
-    const totalMinutes = m + extraMinutes;
-    let endH = h + Math.floor(totalMinutes / 60);
-    let endM = totalMinutes % 60;
-    
-    const period = endH >= 12 ? "PM" : "AM";
-    const displayHour = endH > 12 ? endH - 12 : endH === 0 ? 12 : endH;
-    const displayMinute = endM.toString().padStart(2, "0");
-    return `${displayHour}:${displayMinute} ${period}`;
-  };
-
   const startTimeLabel = TIME_SLOTS.find(s => s.key === startTimeKey)?.start || "";
-  const displayEndTime = getDisplayEndTime(startTimeKey, duration);
+  const displayEndTime = getClassEndTime(startTimeKey, duration);
 
-  const isSlotOccupied = (checkDay, timeKey) => {
-    const daySchedule = schedule[checkDay];
-    if (!daySchedule) return false;
-    for (const [startKey, cls] of Object.entries(daySchedule)) {
-      const occupied = getOccupiedSlots(startKey, cls.duration || 25);
-      if (occupied.includes(timeKey)) return true;
-    }
-    return false;
+  const isSlotOccupied = (checkDay, timeKey, excludeScheduleId = null, currentStudentName = null) => {
+    const cls = schedule[checkDay]?.[timeKey];
+    if (!cls) return false;
+    
+    // 1. If we're editing this exact schedule entry, it's not a conflict
+    if (excludeScheduleId && cls.scheduleId === excludeScheduleId) return false;
+    
+    // 2. If it's the same student, we allow it (the save logic will merge or the user is expanding)
+    if (currentStudentName && cls.studentName === currentStudentName) return false;
+
+    return true;
   };
 
-  const checkOverlap = (checkDay, excludeStartKey = null) => {
+  const checkOverlap = (checkDay) => {
+    const finalStudentName = isF2F ? manualStudentName.trim() : studentName;
     const occupiedSlots = getOccupiedSlots(startTimeKey, duration);
+    const excludeId = editingClass?.scheduleId;
+
     for (const slotKey of occupiedSlots) {
-      if (excludeStartKey) {
-        const excludedOccupied = getOccupiedSlots(excludeStartKey, editingClass?.duration || 25);
-        if (excludedOccupied.includes(slotKey)) continue;
-      }
-      if (isSlotOccupied(checkDay, slotKey)) return slotKey;
+      if (isSlotOccupied(checkDay, slotKey, excludeId, finalStudentName)) return slotKey;
     }
     return null;
   };
@@ -169,7 +145,7 @@ function ClassForm({
     const classData = {
       studentName: finalStudentName,
       teacherName: selectedTeacher,
-      classType,
+      classType: classType.toLowerCase(),
       className: className.trim(),
       book: book.trim(),
       duration,
@@ -178,6 +154,7 @@ function ClassForm({
     if (selectedDays.length === 1) {
       onSave({ ...classData, day: selectedDays[0], timeKey: startTimeKey });
     } else {
+      // Ensure we are passing the raw day strings to the multi-day handler
       onMultiDaySave(selectedDays, currentSlot, classData);
     }
   };
@@ -222,36 +199,36 @@ function ClassForm({
             {/* Student Selection */}
             <div className="form-group highlight-group">
               <label style={{ fontWeight: '800', fontSize: '1rem', color: 'var(--primary)' }}>
-                {isF2F ? "Student Name / Memo *" : "Select Student *"}
+                Student Name / Memo *
               </label>
               
-              {isF2F ? (
-                <div className="manual-student-input-area">
-                  <input
-                    type="text"
-                    className="manual-student-input"
-                    value={manualStudentName}
-                    onChange={(e) => {
-                      setManualStudentName(e.target.value);
-                      const match = allStudents.find(s => s.name.toLowerCase() === e.target.value.trim().toLowerCase());
-                      if (match) setStudentName(match.name);
-                      else setStudentName("");
-                    }}
-                    placeholder="Type student name or memo..."
-                    autoFocus={!isEditing}
-                  />
-                  {manualStudentName && !allStudents.find(s => s.name === manualStudentName) && (
-                    <div className="manual-input-hint">New entry will be created.</div>
-                  )}
-                </div>
-              ) : (
-                <div className="student-select-grid">
+              <div className="manual-student-input-area">
+                <input
+                  type="text"
+                  className="manual-student-input"
+                  value={manualStudentName}
+                  onChange={(e) => {
+                    setManualStudentName(e.target.value);
+                    const match = allStudents.find(s => s.name.toLowerCase() === e.target.value.trim().toLowerCase());
+                    if (match) setStudentName(match.name);
+                    else setStudentName("");
+                  }}
+                  placeholder="Type student name or memo..."
+                  autoFocus={!isEditing}
+                />
+                {manualStudentName && !allStudents.find(s => s.name === manualStudentName) && (
+                  <div className="manual-input-hint">New entry will be created.</div>
+                )}
+              </div>
+
+              {!isEditing && (
+                <div className="student-select-grid" style={{ marginTop: '12px' }}>
                   <button
                     type="button"
                     className={`student-select-card ${studentName === "" ? "selected" : ""}`}
                     onClick={() => handleStudentSelect("")}
                   >
-                    <span className="student-select-placeholder">— Select Student —</span>
+                    <span className="student-select-placeholder">— Or Select Existing —</span>
                   </button>
                   {availableStudents.map((s) => {
                     const studentKey = s.name || s;

@@ -130,6 +130,7 @@
   border-collapse: collapse;
   font-size: 11px;
   min-width: 800px;
+  table-layout: fixed;
 }
 
 .overall-day-table thead,
@@ -145,6 +146,7 @@
   font-weight: 600;
   color: #495057;
   white-space: nowrap;
+  width: 70px;
   min-width: 70px;
   padding: 6px;
   text-align: right;
@@ -156,8 +158,8 @@
 }
 
 .teacher-col {
-  min-width: 90px;
-  max-width: 110px;
+  width: 120px;
+  min-width: 120px;
   padding: 4px 2px;
   text-align: center;
   color: #fff;
@@ -363,5 +365,8 @@
 
   .class-student-name {
     font-size: 11px;
+  }
+}
+t-size: 11px;
   }
 }

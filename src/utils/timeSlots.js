@@ -1,5 +1,19 @@
 export const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
+// Helper to convert JS getDay() (0=Sun) to our internal day name
+export function getDayName(jsDayIndex) {
+  const mapping = {
+    0: "Sunday",
+    1: "Monday",
+    2: "Tuesday",
+    3: "Wednesday",
+    4: "Thursday",
+    5: "Friday",
+    6: "Saturday"
+  };
+  return mapping[jsDayIndex] || "Monday";
+}
+
 export const DAYS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export const DURATIONS = [
@@ -85,30 +99,35 @@ export function getTimeSlotIndex(key) {
 export function getOccupiedSlots(startKey, duration) {
   const durNum = Number(duration);
   const durationConfig = DURATIONS.find((d) => d.value === durNum);
-  if (!durationConfig) return [startKey];
+  const slotsNeeded = durationConfig ? durationConfig.slots : 1;
 
   const startIndex = getTimeSlotIndex(startKey);
   if (startIndex === -1) return [startKey];
 
   const occupied = [];
-  for (let i = 0; i < durationConfig.slots; i++) {
-    const idx = startIndex + i;
-    if (idx < TIME_SLOTS.length && !TIME_SLOTS[idx].isLunch) {
-      occupied.push(TIME_SLOTS[idx].key);
+  let slotsFound = 0;
+  let currentIndex = startIndex;
+
+  while (slotsFound < slotsNeeded && currentIndex < TIME_SLOTS.length) {
+    const slot = TIME_SLOTS[currentIndex];
+    occupied.push(slot.key);
+    
+    // Lunch slots don't count towards class duration, but they take up a row in the table
+    if (!slot.isLunch) {
+      slotsFound++;
     }
+    currentIndex++;
   }
+  
   return occupied;
 }
 
 // Calculate the actual end time string for a class given start key and duration
 export function getClassEndTime(startKey, duration) {
-  const startIndex = getTimeSlotIndex(startKey);
-  if (startIndex === -1) return "";
-
-  const startSlot = TIME_SLOTS[startIndex];
-  const [h, m] = startSlot.key.split(":").map(Number);
-  const totalMinutes = m + duration;
-  let endH = h + Math.floor(totalMinutes / 60);
-  let endM = totalMinutes % 60;
-  return formatTime(endH, endM);
+  const occupied = getOccupiedSlots(startKey, duration);
+  if (occupied.length === 0) return "";
+  
+  const lastKey = occupied[occupied.length - 1];
+  const lastSlot = TIME_SLOTS.find(s => s.key === lastKey);
+  return lastSlot ? lastSlot.end : "";
 }

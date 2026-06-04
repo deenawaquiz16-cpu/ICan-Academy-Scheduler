@@ -3,42 +3,28 @@ import {
   loadStudents,
   loadTeachers,
   addStudent,
-  editStudent,
   deleteStudent,
   updateStudent,
-  addTeacherToStudent,
-  removeTeacherFromStudent,
-  syncStudentsToTeachers,
+  restoreFromTrash,
+  permanentlyDeleteFromTrash,
 } from "../utils/storage";
 import { DAYS, DURATIONS, TIME_SLOTS } from "../utils/timeSlots";
 import "../App.css";
 import "./ManageStudents.css";
 
-const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-const WEEKEND = ["Saturday", "Sunday"];
-const ALL_DAYS = [...WEEKDAYS, ...WEEKEND];
 const DAY_SHORT = { Monday: "Mon", Tuesday: "Tue", Wednesday: "Wed", Thursday: "Thu", Friday: "Fri", Saturday: "Sat", Sunday: "Sun" };
 
 const CLASS_TYPES = [
-  { value: "face-to-face", label: "Face-to-Face", icon: "🏫" },
+  { value: "face-to-face", label: "Face-to-Face", icon: "👤" },
   { value: "online", label: "Online", icon: "💻" },
 ];
 
 const GRADE_LEVELS = [
-  { value: "grade-1", label: "1" },
-  { value: "grade-2", label: "2" },
-  { value: "grade-3", label: "3" },
-  { value: "grade-4", label: "4" },
-  { value: "grade-5", label: "5" },
-  { value: "grade-6", label: "6" },
-  { value: "grade-7", label: "7" },
-  { value: "grade-8", label: "8" },
-  { value: "grade-9", label: "9" },
-  { value: "grade-10", label: "10" },
-  { value: "grade-11", label: "11" },
-  { value: "grade-12", label: "12" },
-  { value: "university", label: "Univ" },
-  { value: "adult", label: "Adult" },
+  { value: "grade-1", label: "1" }, { value: "grade-2", label: "2" }, { value: "grade-3", label: "3" },
+  { value: "grade-4", label: "4" }, { value: "grade-5", label: "5" }, { value: "grade-6", label: "6" },
+  { value: "grade-7", label: "7" }, { value: "grade-8", label: "8" }, { value: "grade-9", label: "9" },
+  { value: "grade-10", label: "10" }, { value: "grade-11", label: "11" }, { value: "grade-12", label: "12" },
+  { value: "university", label: "Univ" }, { value: "adult", label: "Adult" },
 ];
 
 const STUDENT_STATUSES = [
@@ -47,41 +33,19 @@ const STUDENT_STATUSES = [
   { value: "stopped", label: "Stopped" },
 ];
 
-// Determine student scheduling status
-function getStudentStatus(student) {
-  // If student has explicit status set, use it
-  if (student.status) return student.status;
-  // Otherwise derive from schedule data
-  const hasTeacher = !!student.currentTeacher;
-  const hasSchedule = student.schedules && student.schedules.length > 0;
-  if (hasTeacher && hasSchedule) return "active";
-  return "not-scheduled";
-}
-
 function sortStudentsFn(list, by) {
   return [...list].sort((a, b) => {
     if (by === "name") return a.name.localeCompare(b.name);
     if (by === "startDate") return (a.startDate || "").localeCompare(b.startDate || "");
     if (by === "teacher") return (a.currentTeacher || "").localeCompare(b.currentTeacher || "");
-    if (by === "status") {
-      const order = { active: 0, "on-break": 1, stopped: 2, "not-scheduled": 3 };
-      return (order[getStudentStatus(a)] ?? 4) - (order[getStudentStatus(b)] ?? 4);
-    }
     return 0;
   });
 }
 
-// ===== STUDENT MODAL COMPONENT =====
 function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
   const [form, setForm] = useState({
-    name: "",
-    gradeLevel: "",
-    classType: "face-to-face",
-    currentTeacher: "",
-    startDate: new Date().toISOString().split("T")[0],
-    endDate: "",
-    className: "",
-    book: "",
+    name: "", gradeLevel: "", classType: "online", currentTeacher: "",
+    startDate: new Date().toISOString().split("T")[0], endDate: "", className: "", book: "",
   });
 
   if (!isOpen) return null;
@@ -90,16 +54,7 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
     e.preventDefault();
     if (!form.name.trim()) return;
     onAdd(form);
-    setForm({
-      name: "",
-      gradeLevel: "",
-      classType: "face-to-face",
-      currentTeacher: "",
-      startDate: new Date().toISOString().split("T")[0],
-      endDate: "",
-      className: "",
-      book: "",
-    });
+    onClose();
   };
 
   return (
@@ -113,82 +68,39 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
           <div className="modal-body">
             <div className="modal-field">
               <label>Student Name *</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="e.g. John Doe"
-                autoFocus
-                required
-              />
+              <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. John Doe" autoFocus required />
             </div>
-
             <div className="modal-field-row">
               <div className="modal-field">
                 <label>Grade</label>
-                <select
-                  value={form.gradeLevel}
-                  onChange={(e) => setForm({ ...form, gradeLevel: e.target.value })}
-                >
+                <select value={form.gradeLevel} onChange={(e) => setForm({ ...form, gradeLevel: e.target.value })}>
                   <option value="">— Select —</option>
-                  {GRADE_LEVELS.map((g) => (
-                    <option key={g.value} value={g.value}>{g.label}</option>
-                  ))}
+                  {GRADE_LEVELS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+                </select>
+              </div>
+              <div className="modal-field">
+                <label>Class Type</label>
+                <select value={form.classType} onChange={(e) => setForm({ ...form, classType: e.target.value })}>
+                  {CLASS_TYPES.map((ct) => <option key={ct.value} value={ct.value}>{ct.icon} {ct.label}</option>)}
                 </select>
               </div>
             </div>
-
-            <div className="modal-field-row">
-              <div className="modal-field">
-                <label>Class Name</label>
-                <input
-                  type="text"
-                  value={form.className}
-                  onChange={(e) => setForm({ ...form, className: e.target.value })}
-                  placeholder="e.g. Reading A"
-                />
-              </div>
-              <div className="modal-field">
-                <label>Book</label>
-                <input
-                  type="text"
-                  value={form.book}
-                  onChange={(e) => setForm({ ...form, book: e.target.value })}
-                  placeholder="e.g. Oxford Phonics"
-                />
-              </div>
-            </div>
-
             <div className="modal-field">
               <label>Current Teacher</label>
-              <select
-                value={form.currentTeacher}
-                onChange={(e) => setForm({ ...form, currentTeacher: e.target.value })}
-              >
+              <select value={form.currentTeacher} onChange={(e) => setForm({ ...form, currentTeacher: e.target.value })}>
                 <option value="">— Select Teacher —</option>
-                {allTeachersList.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
+                {allTeachersList.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
-            
             <div className="modal-field-row">
-              <div className="modal-field">
-                <label>Start Date</label>
-                <input
-                  type="date"
-                  value={form.startDate}
-                  onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-                />
-              </div>
-              <div className="modal-field">
-                <label>End Date</label>
-                <input
-                  type="date"
-                  value={form.endDate}
-                  onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                />
-              </div>
+               <div className="modal-field">
+                 <label>Start Date</label>
+                 <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
+               </div>
+               <div className="modal-field">
+                 <label>End Date (Optional)</label>
+                 <input type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />
+               </div>
             </div>
           </div>
           <div className="modal-footer">
@@ -207,639 +119,120 @@ function ManageStudents({ onBack }) {
     return [...new Set([...(t.academy || []), ...(t.wfh || [])])].sort();
   }, []);
 
-  const [students, setStudents] = useState(() => {
-    const loaded = loadStudents();
-    return sortStudentsFn(loaded, "name");
-  });
+  const [students, setStudents] = useState(() => sortStudentsFn(loadStudents(), "name"));
   const [isAdding, setIsAdding] = useState(false);
-  const [editingScheduleFor, setEditingScheduleFor] = useState(null);
-
-  // Inline teacher history add state
-  const [addingHistoryTeacherFor, setAddingHistoryTeacherFor] = useState(null);
-  const [historyTeacherName, setHistoryTeacherName] = useState("");
-
-  // Save feedback state
-  const [savedRow, setSavedRow] = useState(null);
-
-  // Search & filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTeacher, setFilterTeacher] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [sortBy, setSortBy] = useState("name");
-  const [activeTab, setActiveTab] = useState("all"); // "all", "face-to-face", "online"
 
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
-      const status = getStudentStatus(s);
-      const matchesSearch = searchQuery === "" ||
-        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (s.currentTeacher || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (s.className || "").toLowerCase().includes(searchQuery.toLowerCase());
-
+      const matchesSearch = searchQuery === "" || s.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesTeacher = filterTeacher === "" || s.currentTeacher === filterTeacher;
-      const matchesStatus = filterStatus === "" || status === filterStatus;
-      const matchesTab = activeTab === "all" ? !s.memo : s.classType === activeTab;
-
-      return matchesSearch && matchesTeacher && matchesStatus && matchesTab;
+      const matchesStatus = filterStatus === "" || (s.status || "active") === filterStatus;
+      return matchesSearch && matchesTeacher && matchesStatus;
     });
-  }, [students, searchQuery, filterTeacher, filterStatus, activeTab]);
-
-  const handleAdd = (formData) => {
-    const updatedList = addStudent(formData.name);
-    const newStudent = updatedList.find(s => s.name === formData.name);
-    
-    if (newStudent) {
-      updateStudent(newStudent.id, {
-        gradeLevel: formData.gradeLevel,
-        classType: formData.classType,
-        currentTeacher: formData.currentTeacher,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        className: formData.className,
-        book: formData.book,
-        status: "active"
-      });
-    }
-
-    setStudents(sortStudentsFn(loadStudents(), sortBy));
-    setIsAdding(false);
-  };
+  }, [students, searchQuery, filterTeacher, filterStatus]);
 
   const handleQuickAdd = () => {
     const baseName = "New Student";
     let name = baseName;
     let counter = 1;
-    const existingNames = students.map(s => s.name.toLowerCase());
-    
-    while (existingNames.includes(name.toLowerCase())) {
-      name = `${baseName} ${counter}`;
-      counter++;
+    while (students.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+      name = `${baseName} ${counter++}`;
     }
-
-    const today = new Date().toISOString().split("T")[0];
-    const updatedList = addStudent(name, "");
-    const newStudent = updatedList.find(s => s.name === name);
-
-    if (newStudent) {
-      updateStudent(newStudent.id, { 
-        startDate: today, 
-        status: "active",
-        schedules: [{
-          id: Date.now().toString(),
-          days: [],
-          timeSlot: "08:00",
-          duration: 25,
-          teacherName: "",
-          classType: "face-to-face",
-          className: "",
-          book: "",
-        }]
-      });
-    }
-    
-    setSearchQuery("");
-    setFilterTeacher("");
-    setFilterStatus("");
-    setActiveTab("all");
-    
-    setStudents(sortStudentsFn(loadStudents(), sortBy));
-    
-    setTimeout(() => {
-      const row = document.querySelector(`[data-student-id="${newStudent?.id}"]`);
-      if (row) {
-        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        row.classList.add('new-row-highlight');
-        setTimeout(() => row.classList.remove('new-row-highlight'), 2000);
-      }
-    }, 100);
+    addStudent(name);
+    setStudents(loadStudents());
   };
 
-  const handleInlineScheduleUpdate = (studentId, updates) => {
-    const student = students.find((s) => s.id === studentId);
-    if (!student) return;
-
-    let schedules = [...(student.schedules || [])];
-    if (schedules.length === 0) {
-      schedules.push({
-        id: "initial-schedule",
-        days: [],
-        timeSlot: "08:00",
-        duration: 25,
-        teacherName: student.currentTeacher || "",
-        classType: student.classType || "face-to-face",
-        className: student.className || "",
-        book: student.book || "",
-      });
-    }
-
-    schedules[0] = { ...schedules[0], ...updates };
-
-    updateStudent(studentId, { schedules });
-    setStudents(sortStudentsFn(loadStudents(), sortBy));
+  const formatSchedule = (schedules) => {
+    const sched = schedules?.[0] || { days: [], timeSlot: "08:00" };
+    const daysStr = sched.days?.length > 0 ? sched.days.map(d => DAY_SHORT[d] || d.slice(0,3)).join(", ") : "Not set";
+    const startTimeLabel = TIME_SLOTS.find(t => t.key === (sched.timeSlot || "08:00"))?.start || "N/A";
+    return <span style={{fontSize: '11px'}}>{daysStr} | {startTimeLabel}</span>;
   };
-
-  const handleDelete = (id, name) => {
-    if (!confirm(`Delete "${name}"? This action cannot be undone.`)) return;
-    const updated = deleteStudent(id);
-    setStudents(sortStudentsFn(updated, sortBy));
-  };
-
-  const handleAddTeacherToHistory = (studentId, teacherName) => {
-    if (!teacherName) return;
-    addTeacherToStudent(studentId, {
-      name: teacherName,
-      duration: 25,
-      days: [],
-      className: "",
-    });
-    setStudents(sortStudentsFn(loadStudents(), sortBy));
-  };
-
-  const handleRemoveTeacher = (studentId, index) => {
-    removeTeacherFromStudent(studentId, index);
-    setStudents(sortStudentsFn(loadStudents(), sortBy));
-  };
-
-  const formatSchedule = (schedules, studentId) => {
-    const sched = schedules?.[0] || { days: [], timeSlot: "08:00", duration: 25 };
-
-    const daysStr = sched.days.length > 0 
-      ? sched.days.map(d => DAY_SHORT[d]).join(", ") 
-      : "No days set";
-    
-    // Custom display end time logic based on user request
-    const getDisplayEndTime = (startKey, dur) => {
-      const slotIdx = TIME_SLOTS.findIndex(s => s.key === startKey);
-      if (slotIdx === -1) return "";
-      
-      const startSlot = TIME_SLOTS[slotIdx];
-      const [h, m] = startSlot.key.split(":").map(Number);
-      
-      let extraMinutes = dur;
-      if (dur === 100) extraMinutes = 110;
-
-      const totalMinutes = m + extraMinutes;
-      let endH = h + Math.floor(totalMinutes / 60);
-      let endM = totalMinutes % 60;
-      
-      const period = endH >= 12 ? "PM" : "AM";
-      const displayHour = endH > 12 ? endH - 12 : endH === 0 ? 12 : endH;
-      const displayMinute = endM.toString().padStart(2, "0");
-      return `${displayHour}:${displayMinute} ${period}`;
-    };
-
-    const startTimeLabel = TIME_SLOTS.find(t => t.key === (sched.timeSlot || "08:00"))?.start || "No time set";
-    const endTimeLabel = getDisplayEndTime(sched.timeSlot || "08:00", sched.duration || 25);
-
-    return (
-      <div 
-        className="schedule-summary-chip" 
-        onClick={() => setEditingScheduleFor(studentId)}
-        title="Click to edit schedule"
-      >
-        <div className="summary-main">
-          <span className="summary-days">{daysStr}</span>
-          <div className="summary-divider"></div>
-          <div className="summary-time-wrapper">
-            <span className="summary-clock-icon">🕒</span>
-            <span className="summary-time">{startTimeLabel} – {endTimeLabel}</span>
-          </div>
-        </div>
-        <span className="edit-icon-small">✏️</span>
-      </div>
-    );
-  };
-
-  const editingStudent = students.find(s => s.id === editingScheduleFor);
-  const editingSched = editingStudent?.schedules?.[0] || { days: [], timeSlot: "08:00", duration: 25 };
-
-  // Custom display end time logic for the modal
-  const getModalDisplayEndTime = (startKey, dur) => {
-    const slotIdx = TIME_SLOTS.findIndex(s => s.key === startKey);
-    if (slotIdx === -1) return "";
-    const startSlot = TIME_SLOTS[slotIdx];
-    const [h, m] = startSlot.key.split(":").map(Number);
-    let extraMinutes = dur;
-    if (dur === 100) extraMinutes = 110;
-    const totalMinutes = m + extraMinutes;
-    let endH = h + Math.floor(totalMinutes / 60);
-    let endM = totalMinutes % 60;
-    const period = endH >= 12 ? "PM" : "AM";
-    const displayHour = endH > 12 ? endH - 12 : endH === 0 ? 12 : endH;
-    const displayMinute = endM.toString().padStart(2, "0");
-    return `${displayHour}:${displayMinute} ${period}`;
-  };
-
-  const modalStartTimeLabel = TIME_SLOTS.find(t => t.key === (editingSched.timeSlot || "08:00"))?.start || "";
-  const modalEndTimeLabel = getModalDisplayEndTime(editingSched.timeSlot || "08:00", editingSched.duration || 25);
-
-  const allCurrentTeachers = [...new Set(students.map((s) => s.currentTeacher).filter(Boolean))].sort();
 
   return (
     <div className="manage-page">
       <div className="manage-header">
         <button className="back-btn" onClick={onBack}>← Back</button>
-        <h1>🤖 ICan Academy — Manage Students</h1>
+        <h1>🤖 Manage Students (Complete View)</h1>
       </div>
 
-      <div className="manage-section">
+      <div className="manage-section" style={{ maxWidth: '100%' }}>
         <div className="manage-section-header">
-          <h2>Student List</h2>
-          <div className="header-right">
-            <span className="student-count">{filteredStudents.length} of {students.length} student{students.length !== 1 ? "s" : ""}</span>
-            <div className="add-student-actions">
-              <button className="add-row-btn" onClick={handleQuickAdd} title="Quickly add a blank row to the table">
-                📄 Add Row
-              </button>
-            </div>
+          <div className="header-left">
+             <h2>Database Records ({filteredStudents.length})</h2>
+             <button className="add-row-btn" onClick={() => setIsAdding(true)}>+ Add Student</button>
+             <button className="add-row-btn" onClick={handleQuickAdd} style={{marginLeft: '10px'}}>📄 Quick Row</button>
+          </div>
+          <div className="student-filters" style={{display: 'flex', gap: '10px'}}>
+            <input type="text" className="filter-input" placeholder="Search students..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <select className="filter-select" value={filterTeacher} onChange={(e) => setFilterTeacher(e.target.value)}>
+              <option value="">All Teachers</option>
+              {allTeachersList.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
           </div>
         </div>
 
-        {/* Add Student Modal */}
-        <StudentModal 
-          isOpen={isAdding} 
-          onClose={() => setIsAdding(false)} 
-          onAdd={handleAdd}
-          allTeachersList={allTeachersList}
-        />
+        <StudentModal isOpen={isAdding} onClose={() => setIsAdding(false)} onAdd={(data) => { addStudent(data.name); setStudents(loadStudents()); }} allTeachersList={allTeachersList} />
 
-        {/* Schedule Edit Modal */}
-        {editingScheduleFor && (
-          <div className="modal-overlay" onClick={() => setEditingScheduleFor(null)}>
-            <div className="modal-content schedule-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>📅 Edit Schedule: {editingStudent.name}</h2>
-                <button className="modal-close" onClick={() => setEditingScheduleFor(null)}>×</button>
-              </div>
-              <div className="modal-body">
-                <div className="popover-section">
-                  <label>Days</label>
-                  <div className="day-picker-inline">
-                    {ALL_DAYS.map((day) => (
-                      <button
-                        key={day}
-                        type="button"
-                        className={`day-dot ${editingSched.days.includes(day) ? "active" : ""}`}
-                        onClick={() => {
-                          const newDays = editingSched.days.includes(day)
-                            ? editingSched.days.filter((d) => d !== day)
-                            : [...editingSched.days, day];
-                          handleInlineScheduleUpdate(editingScheduleFor, { days: newDays });
-                        }}
-                      >
-                        {DAY_SHORT[day]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="popover-section" style={{ marginTop: '20px' }}>
-                  <label>Start Time</label>
-                  <div className="start-time-grid-mini">
-                    {TIME_SLOTS.filter(s => !s.isLunch).map((slot) => (
-                      <button
-                        key={slot.key}
-                        type="button"
-                        className={`time-pill-mini ${editingSched.timeSlot === slot.key ? "selected" : ""}`}
-                        onClick={() => handleInlineScheduleUpdate(editingScheduleFor, { timeSlot: slot.key })}
-                      >
-                        {slot.start}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="popover-section" style={{ marginTop: '20px' }}>
-                  <label>Duration</label>
-                  <div className="duration-segmented-mini">
-                    {[25, 50, 100].map((d) => (
-                      <button
-                        key={d}
-                        type="button"
-                        className={`duration-pill-mini ${editingSched.duration === d ? "selected" : ""}`}
-                        onClick={() => handleInlineScheduleUpdate(editingScheduleFor, { duration: d })}
-                      >
-                        {d} mins
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="preview-card-mini" style={{ marginTop: '20px' }}>
-                  <div className="preview-range-mini">{modalStartTimeLabel} – {modalEndTimeLabel}</div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button 
-                  className="modal-save-btn" 
-                  onClick={() => setEditingScheduleFor(null)}
-                  style={{ width: '100%' }}
-                >
-                  Done
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Search & Filters */}
-        <div className="student-filters">
-          <div className="filter-group">
-            <span className="filter-icon">🔍</span>
-            <input
-              type="text"
-              className="filter-input"
-              placeholder="Search students, teachers, classes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <select className="filter-select" value={filterTeacher} onChange={(e) => setFilterTeacher(e.target.value)}>
-            <option value="">All Teachers</option>
-            {allCurrentTeachers.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-          <select className="filter-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-            <option value="">All Statuses</option>
-            <option value="active">🟢 Active</option>
-            <option value="on-break">🟡 On Break</option>
-            <option value="stopped">🔴 Stopped</option>
-          </select>
-          <select
-            className="filter-select"
-            value={sortBy}
-            onChange={(e) => {
-              setSortBy(e.target.value);
-              setStudents(sortStudentsFn(loadStudents(), e.target.value));
-            }}
-          >
-            <option value="name">Sort by Name</option>
-            <option value="startDate">Sort by Start Date</option>
-            <option value="teacher">Sort by Teacher</option>
-            <option value="status">Sort by Status</option>
-          </select>
-        </div>
-
-        {/* Student Table */}
         <div className="student-table-container">
-          <table className="student-table">
+          <table className="student-table complete-table">
             <thead>
               <tr>
-                <th className="col-index">#</th>
-                <th className="col-name">Student</th>
-                <th className="col-grade">Grade</th>
-                <th className="col-status">Status</th>
-                <th className="col-class">Class Name</th>
-                <th className="col-class-type">Type</th>
-                <th className="col-schedule">Schedule (Days/Time)</th>
-                <th className="col-teacher">Current Teacher</th>
-                <th className="col-start">Start Date</th>
-                <th className="col-end">End Date</th>
-                <th className="col-history">Teacher History</th>
-                <th className="col-actions">Actions</th>
+                <th>#</th>
+                <th>Name</th>
+                <th>Grade</th>
+                <th>Status</th>
+                <th>Class</th>
+                <th>Type</th>
+                <th>Schedule</th>
+                <th>Teacher</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>History</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredStudents.map((s, index) => {
-                const prevTeachers = s.previousTeachers || [];
-                const status = getStudentStatus(s);
-
-                return (
-                  <tr
-                    key={s.id}
-                    className={`student-row status-${status}`}
-                    data-student-id={s.id}
-                  >
-                    <td className="col-index">{index + 1}</td>
-                    <td className="col-name">
-                      <input
-                        type="text"
-                        className="name-inline-input"
-                        defaultValue={s.name}
-                        onBlur={(e) => {
-                          const newName = e.target.value.trim();
-                          if (newName && newName !== s.name) {
-                            editStudent(s.id, newName);
-                            setStudents(sortStudentsFn(loadStudents(), sortBy));
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.target.blur();
-                          }
-                        }}
-                        placeholder="Student Name"
-                      />
-                    </td>
-                    <td className="col-grade">
-                      <select
-                        className="grade-select"
-                        value={s.gradeLevel || ""}
-                        onChange={(e) => {
-                          updateStudent(s.id, { gradeLevel: e.target.value });
-                          setStudents(sortStudentsFn(loadStudents(), sortBy));
-                        }}
-                      >
-                        <option value="">—</option>
-                        {GRADE_LEVELS.map((g) => (
-                          <option key={g.value} value={g.value}>{g.label}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="col-status">
-                      <div className="status-badge-wrapper" onClick={(e) => {
-                        e.stopPropagation();
-                        const select = e.currentTarget.querySelector('.status-select');
-                        if (select) select.showPicker?.();
-                      }}>
-                        <select
-                          className="status-select status-badge-visible"
-                          value={s.status || "active"}
-                          onChange={(e) => {
-                            updateStudent(s.id, { status: e.target.value });
-                            setStudents(sortStudentsFn(loadStudents(), sortBy));
-                          }}
-                        >
-                          {STUDENT_STATUSES.map((st) => (
-                            <option key={st.value} value={st.value}>{st.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </td>
-                    <td className="col-class">
-                      <input
-                        type="text"
-                        className="class-inline-input"
-                        defaultValue={s.className || ""}
-                        onBlur={(e) => {
-                          const val = e.target.value.trim();
-                          if (val !== (s.className || "")) {
-                            updateStudent(s.id, { className: val });
-                            setStudents(sortStudentsFn(loadStudents(), sortBy));
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") e.target.blur();
-                        }}
-                        placeholder="Class name"
-                      />
-                    </td>
-                    <td className="col-schedule">
-                      <div className="schedule-cell-container">
-                        {formatSchedule(s.schedules, s.id)}
-                      </div>
-                    </td>
-                    <td className="col-teacher">
-                      <select
-                        className="teacher-inline-select"
-                        value={s.currentTeacher || ""}
-                        onChange={(e) => {
-                          updateStudent(s.id, { currentTeacher: e.target.value });
-                          setStudents(sortStudentsFn(loadStudents(), sortBy));
-                        }}
-                      >
-                        <option value="">— Select —</option>
-                        {allTeachersList.map((t) => (
-                          <option key={t} value={t}>{t}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="col-start">
-                      <input
-                        type="date"
-                        className="date-inline-input"
-                        value={s.startDate || ""}
-                        onChange={(e) => {
-                          updateStudent(s.id, { startDate: e.target.value });
-                          setStudents(sortStudentsFn(loadStudents(), sortBy));
-                        }}
-                      />
-                    </td>
-                    <td className="col-end">
-                      <input
-                        type="date"
-                        className="date-inline-input"
-                        value={s.endDate || ""}
-                        onChange={(e) => {
-                          updateStudent(s.id, { endDate: e.target.value });
-                          setStudents(sortStudentsFn(loadStudents(), sortBy));
-                        }}
-                        min={s.startDate || undefined}
-                      />
-                    </td>
-                    <td className="col-history">
-                      <div className="teacher-tags">
-                        {prevTeachers.slice(0, 3).map((t, i) => (
-                          <span key={i} className="teacher-tag">
-                            {t.name}
-                            <button
-                              className="remove-teacher-tag-btn"
-                              onClick={(e) => { e.stopPropagation(); handleRemoveTeacher(s.id, i); }}
-                              title="Remove"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                        {prevTeachers.length > 3 && (
-                          <span className="teacher-tag more">+{prevTeachers.length - 3}</span>
-                        )}
-                        {addingHistoryTeacherFor === s.id ? (
-                          <div className="inline-history-add" onClick={(e) => e.stopPropagation()}>
-                            <select
-                              value={historyTeacherName}
-                              onChange={(e) => setHistoryTeacherName(e.target.value)}
-                              autoFocus
-                            >
-                              <option value="">Select...</option>
-                              {allTeachersList.map((t) => (
-                                <option key={t} value={t}>{t}</option>
-                              ))}
-                            </select>
-                            <button
-                              className="confirm-history-btn"
-                              onClick={() => {
-                                handleAddTeacherToHistory(s.id, historyTeacherName);
-                                setAddingHistoryTeacherFor(null);
-                                setHistoryTeacherName("");
-                              }}
-                            >✓</button>
-                            <button
-                              className="cancel-history-btn"
-                              onClick={() => {
-                                setAddingHistoryTeacherFor(null);
-                                setHistoryTeacherName("");
-                              }}
-                            >✕</button>
-                          </div>
-                        ) : (
-                          <button
-                            className="add-history-btn"
-                            onClick={(e) => { e.stopPropagation(); setAddingHistoryTeacherFor(s.id); }}
-                            title="Add teacher to history"
-                          >
-                            +
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                    <td className="col-actions">
-                      <div className="row-action-buttons">
-                        <button
-                          className={`save-changes-btn ${savedRow === s.id ? "flash" : ""}`}
-                          onClick={() => {
-                            syncStudentsToTeachers();
-                            setStudents(sortStudentsFn(loadStudents(), sortBy));
-                            setSavedRow(s.id);
-                            setTimeout(() => setSavedRow(null), 2000);
-                          }}
-                        >
-                          {savedRow === s.id ? "✓ Saved" : "💾 Save Changes"}
-                        </button>
-                        <button className="delete-row-btn" onClick={() => handleDelete(s.id, s.name)} title="Delete student">
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+              {filteredStudents.map((s, index) => (
+                <tr key={s.id}>
+                  <td>{index + 1}</td>
+                  <td><input className="name-inline-input" defaultValue={s.name} onBlur={(e) => { updateStudent(s.id, { name: e.target.value.trim() }); setStudents(loadStudents()); }} /></td>
+                  <td>
+                    <select value={s.gradeLevel || ""} onChange={(e) => { updateStudent(s.id, { gradeLevel: e.target.value }); setStudents(loadStudents()); }}>
+                      <option value="">—</option>
+                      {GRADE_LEVELS.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                    </select>
+                  </td>
+                  <td>
+                    <select value={s.status || "active"} onChange={(e) => { updateStudent(s.id, { status: e.target.value }); setStudents(loadStudents()); }}>
+                      {STUDENT_STATUSES.map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
+                    </select>
+                  </td>
+                  <td><input className="class-inline-input" defaultValue={s.className || ""} onBlur={(e) => { updateStudent(s.id, { className: e.target.value.trim() }); setStudents(loadStudents()); }} /></td>
+                  <td>
+                    <select value={s.classType || "online"} onChange={(e) => { updateStudent(s.id, { classType: e.target.value }); setStudents(loadStudents()); }}>
+                      {CLASS_TYPES.map(ct => <option key={ct.value} value={ct.value}>{ct.icon} {ct.label}</option>)}
+                    </select>
+                  </td>
+                  <td>{formatSchedule(s.schedules)}</td>
+                  <td>
+                    <select value={s.currentTeacher || ""} onChange={(e) => { updateStudent(s.id, { currentTeacher: e.target.value }); setStudents(loadStudents()); }}>
+                      <option value="">—</option>
+                      {allTeachersList.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </td>
+                  <td><input type="date" value={s.startDate || ""} onChange={(e) => { updateStudent(s.id, { startDate: e.target.value }); setStudents(loadStudents()); }} /></td>
+                  <td><input type="date" value={s.endDate || ""} onChange={(e) => { updateStudent(s.id, { endDate: e.target.value }); setStudents(loadStudents()); }} /></td>
+                  <td><div className="history-summary">{s.previousTeachers?.length || 0} prev</div></td>
+                  <td><button className="delete-row-btn" onClick={() => { if(confirm(`Delete ${s.name}?`)) { deleteStudent(s.id); setStudents(loadStudents()); } }}>🗑️</button></td>
+                </tr>
+              ))}
             </tbody>
           </table>
-
-          {filteredStudents.length === 0 && !isAdding && (
-            <p className="empty-list-msg">
-              {students.length === 0
-                ? 'No students added yet. Click "+ Add Student" to begin.'
-                : "No students match your filters."}
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default ManageStudents;
-)} title="Delete student">
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          {filteredStudents.length === 0 && !isAdding && (
-            <p className="empty-list-msg">
-              {students.length === 0
-                ? 'No students added yet. Click "+ Add Student" to begin.'
-                : "No students match your filters."}
-            </p>
-          )}
         </div>
       </div>
     </div>

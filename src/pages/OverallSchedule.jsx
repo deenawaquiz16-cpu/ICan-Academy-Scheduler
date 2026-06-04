@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { loadSchedules, loadTeachers, loadStudents } from "../utils/storage";
-import { TIME_SLOTS, getClassEndTime } from "../utils/timeSlots";
+import { TIME_SLOTS, getClassEndTime, getOccupiedSlots } from "../utils/timeSlots";
 import "../App.css";
 import "./OverallSchedule.css";
 
@@ -17,13 +17,11 @@ function OverallSchedule({ onBack }) {
   const [allTeachers] = useState(() => loadTeachers());
   const [allStudents] = useState(() => loadStudents());
 
-  // Flatten all teachers
   const teacherList = useMemo(() => {
     const list = [...(allTeachers.academy || []), ...(allTeachers.wfh || [])];
     return [...new Set(list)].sort();
   }, [allTeachers]);
 
-  // Build a lookup: teacherName -> day -> timeKey -> class
   const teacherScheduleMap = useMemo(() => {
     const map = {};
     teacherList.forEach((teacher) => {
@@ -32,82 +30,133 @@ function OverallSchedule({ onBack }) {
     return map;
   }, [schedules, teacherList]);
 
-  // Get student display info
   const getStudentInfo = (studentKey) => {
     const student = allStudents.find((s) => s.name === studentKey);
     if (!student) return { name: studentKey, className: "" };
-    return {
-      name: student.name,
-      className: student.className || "",
-    };
+    return { name: student.name, className: student.className || "" };
   };
 
-  // Count total classes
-  const totalClasses = useMemo(() => {
-    let count = 0;
-    const seenSessions = new Set();
-    teacherList.forEach((teacher) => {
-      const teacherSched = schedules[teacher] || {};
-      Object.entries(teacherSched).forEach(([day, daySched]) => {
-        if (daySched && typeof daySched === "object") {
-          Object.entries(daySched).forEach(([timeKey, slotData]) => {
-            const scheduleId = slotData.scheduleId;
-            if (scheduleId) {
-              const sessionKey = `${teacher}-${scheduleId}`;
-              if (!seenSessions.has(sessionKey)) {
-                count++;
-                seenSessions.add(sessionKey);
-              }
-            } else {
-              // Legacy fallback
-              count++;
-            }
-          });
-        }
-      });
-    });
-    return count;
-  }, [schedules, teacherList]);
+  const getClassForCell = (teacher, day, timeKey) => {
+    const cls = teacherScheduleMap[teacher]?.[day]?.[timeKey];
+    if (!cls || timeKey === "12:00") return null;
 
-  const timeSlotsToShow = TIME_SLOTS.filter((s) => !s.isLunch);
+    // A block starts if it's the actual start OR first slot after lunch
+    const isStartOfBlock = cls.startKey === timeKey || (timeKey === "13:00" && cls.startKey < "12:00");
+    if (!isStartOfBlock) return null;
+
+    const allOccupied = getOccupiedSlots(cls.startKey, cls.duration || 25);
+    // Double check that the current timeKey is actually part of this class
+    if (!allOccupied.includes(timeKey)) return null;
+
+    let blockOccupied = [];
+    if (timeKey < "12:00") {
+      blockOccupied = allOccupied.filter(k => k < "12:00");
+    } else {
+      blockOccupied = allOccupied.filter(k => k >= "13:00");
+    }
+
+    return { ...cls, occupied: blockOccupied };
+  };
+
+  const renderTableHeaders = () => (
+    <thead>
+      <tr>
+        <th className="time-col">Time</th>
+        {teacherList.map((teacher) => (
+          <th key={teacher} className="teacher-col">
+            <div className="teacher-header">
+              <span className="teacher-initial">{teacher.charAt(0)}</span>
+              <span className="teacher-name-text">{teacher}</span>
+            </div>
+          </th>
+        ))}
+      </tr>
+    </thead>
+  );
+
+  const renderGridRows = (day) => {
+    return TIME_SLOTS.map((slot) => (
+      <tr key={slot.key} className={slot.isLunch ? "lunch-row" : ""}>
+        <td className="time-col">
+          {slot.isLunch ? "BREAK" : slot.label}
+        </td>
+        {teacherList.map((teacher) => {
+          const classInfo = getClassForCell(teacher, day, slot.key);
+          
+          // Solid Grid: Check if this slot is a continuation of a class
+          const teacherSched = teacherScheduleMap[teacher]?.[day] || {};
+          let isContinuation = false;
+          let parentClass = null;
+
+          if (!classInfo || slot.isLunch) {
+            for (const [startKey, cls] of Object.entries(teacherSched)) {
+              const occupied = getOccupiedSlots(startKey, cls.duration || 25);
+              if (startKey !== slot.key && occupied.includes(slot.key)) {
+                isContinuation = true;
+                parentClass = cls;
+                break;
+              }
+            }
+          }
+
+          // 1. Class Start Cell
+          if (classInfo && !slot.isLunch) {
+            const studentInfo = getStudentInfo(classInfo.studentName);
+            const endTime = getClassEndTime(slot.key, classInfo.duration || 25);
+            const isOnline = classInfo.classType?.toLowerCase() === "online";
+            const typeClass = isOnline ? "online" : "f2f";
+
+            return (
+              <td key={teacher} className={`class-cell ${typeClass} class-start`}>
+                <div className="class-card">
+                  <strong className="class-student-name">{studentInfo.name}</strong>
+                  <div className="class-card-body">
+                    {studentInfo.className && <span className="class-badge">{studentInfo.className}</span>}
+                    <span className="class-time">{slot.start}-{endTime}</span>
+                    <span className={`type-badge ${typeClass}`}>
+                      {isOnline ? "💻" : "👤"} {classInfo.classType}
+                    </span>
+                  </div>
+                </div>
+              </td>
+            );
+          }
+
+          // 2. Class Continuation Cell
+          if (isContinuation && !slot.isLunch) {
+            const typeClass = parentClass.classType?.toLowerCase() === "online" ? "online" : "f2f";
+            return (
+              <td key={teacher} className={`class-cell ${typeClass} class-continuation`}></td>
+            );
+          }
+
+          // 3. Empty or Lunch Cell (Default)
+          return (
+            <td key={teacher} className={slot.isLunch ? "lunch-cell" : "empty-cell"}>
+              {slot.isLunch ? "—" : ""}
+            </td>
+          );
+        })}
+      </tr>
+    ));
+  };
 
   return (
     <div className="overall-schedule-page">
       <div className="overall-header">
         <button className="back-btn" onClick={onBack}>← Back</button>
         <h1>📋 Overall Schedule</h1>
-        <div className="overall-stats">
-          <span className="stat-badge">{teacherList.length} teachers</span>
-          <span className="stat-badge">{totalClasses} classes</span>
-        </div>
       </div>
 
       <div className="overall-controls">
         <div className="view-toggle">
-          <button
-            className={`toggle-btn ${viewMode === "day" ? "active" : ""}`}
-            onClick={() => setViewMode("day")}
-          >
-            📅 Day View
-          </button>
-          <button
-            className={`toggle-btn ${viewMode === "week" ? "active" : ""}`}
-            onClick={() => setViewMode("week")}
-          >
-            📆 Week View
-          </button>
+          <button className={`toggle-btn ${viewMode === "day" ? "active" : ""}`} onClick={() => setViewMode("day")}>📅 Day View</button>
+          <button className={`toggle-btn ${viewMode === "week" ? "active" : ""}`} onClick={() => setViewMode("week")}>📆 Week View</button>
         </div>
-
         {viewMode === "day" && (
           <div className="day-selector">
-            {ALL_DAYS.map((day) => (
-              <button
-                key={day}
-                className={`day-btn ${selectedDay === day ? "active" : ""} ${WEEKEND.includes(day) ? "weekend" : ""}`}
-                onClick={() => setSelectedDay(day)}
-              >
-                {day.slice(0, 3)}
-              </button>
+            {DAYS.map((day) => (
+              <button key={day} className={`day-btn ${selectedDay === day ? "active" : ""} ${["Saturday", "Sunday"].includes(day) ? "weekend" : ""}`} onClick={() => setSelectedDay(day)}>{day.slice(0, 3)}</button>
             ))}
           </div>
         )}
@@ -118,62 +167,8 @@ function OverallSchedule({ onBack }) {
           <h2>{selectedDay}'s Schedule</h2>
           <div className="day-schedule-grid">
             <table className="overall-day-table">
-              <thead>
-                <tr>
-                  <th className="time-col">Time</th>
-                  {teacherList.map((teacher) => (
-                    <th key={teacher} className="teacher-col">
-                      <div className="teacher-header">
-                        <span className="teacher-initial">{teacher.charAt(0)}</span>
-                        <span className="teacher-name-text">{teacher}</span>
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {timeSlotsToShow.map((slot) => {
-                  const hasAnyClass = teacherList.some(
-                    (teacher) => teacherScheduleMap[teacher]?.[selectedDay]?.[slot.key]
-                  );
-
-                  return (
-                    <tr key={slot.key} className={hasAnyClass ? "has-class" : ""}>
-                      <td className="time-col">{slot.label}</td>
-                      {teacherList.map((teacher) => {
-                        const cls = teacherScheduleMap[teacher]?.[selectedDay]?.[slot.key];
-                        if (!cls) {
-                          return <td key={teacher} className="empty-cell"></td>;
-                        }
-
-                        const studentInfo = getStudentInfo(cls.studentName);
-                        const endTime = getClassEndTime(slot.key, cls.duration || 25);
-
-                        return (
-                          <td key={teacher} className={`class-cell ${cls.classType === "Online" ? "online" : "f2f"}`}>
-                            <div className="class-card">
-                              <div className="class-card-header">
-                                <strong className="class-student-name">
-                                  {studentInfo.name}
-                                </strong>
-                              </div>
-                              <div className="class-card-body">
-                                {studentInfo.className && (
-                                  <span className="class-badge">{studentInfo.className}</span>
-                                )}
-                                <span className="class-time">{slot.label} – {endTime}</span>
-                                <span className={`type-badge ${cls.classType === "Online" ? "online" : "f2f"}`}>
-                                  {cls.classType === "Online" ? "💻" : "👤"} {cls.classType}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
+              {renderTableHeaders()}
+              <tbody>{renderGridRows(selectedDay)}</tbody>
             </table>
           </div>
         </div>
@@ -181,87 +176,22 @@ function OverallSchedule({ onBack }) {
 
       {viewMode === "week" && (
         <div className="overall-week-view">
-          <h2>Weekly Overview</h2>
-          {ALL_DAYS.map((day) => {
-            const dayHasClasses = teacherList.some(
-              (teacher) => teacherScheduleMap[teacher]?.[day]
-            );
-
-            return (
-              <div key={day} className={`week-day-section ${WEEKEND.includes(day) ? "weekend" : ""}`}>
-                <div
-                  className="week-day-header"
-                  onClick={() => {
-                    setExpandedTeacher(expandedTeacher === day ? null : day);
-                  }}
-                >
-                  <span className="expand-icon">{expandedTeacher === day ? "▼" : "▶"}</span>
-                  <h3>{day}</h3>
-                  {!dayHasClasses && <span className="no-classes-badge">No classes</span>}
-                </div>
-
-                {expandedTeacher === day && dayHasClasses && (
-                  <div className="week-day-content">
-                    <table className="overall-week-table">
-                      <thead>
-                        <tr>
-                          <th className="time-col">Time</th>
-                          {teacherList.map((teacher) => (
-                            <th key={teacher} className="teacher-col">
-                              <div className="teacher-header">
-                                <span className="teacher-initial">{teacher.charAt(0)}</span>
-                                <span className="teacher-name-text">{teacher}</span>
-                              </div>
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {timeSlotsToShow.map((slot) => {
-                          const hasAnyClass = teacherList.some(
-                            (teacher) => teacherScheduleMap[teacher]?.[day]?.[slot.key]
-                          );
-
-                          return (
-                            <tr key={slot.key} className={hasAnyClass ? "has-class" : ""}>
-                              <td className="time-col">{slot.label}</td>
-                              {teacherList.map((teacher) => {
-                                const cls = teacherScheduleMap[teacher]?.[day]?.[slot.key];
-                                if (!cls) {
-                                  return <td key={teacher} className="empty-cell"></td>;
-                                }
-
-                                const studentInfo = getStudentInfo(cls.studentName);
-                                const endTime = getClassEndTime(slot.key, cls.duration || 25);
-
-                                return (
-                                  <td key={teacher} className={`class-cell ${cls.classType === "Online" ? "online" : "f2f"}`}>
-                                    <div className="class-card">
-                                      <div className="class-card-header">
-                                        <div className="week-student-info">
-                                          <strong>{studentInfo.name}</strong>
-                                        </div>
-                                      </div>
-                                      <div className="class-card-body">
-                                        {studentInfo.className && (
-                                          <span className="class-badge">{studentInfo.className}</span>
-                                        )}
-                                        <span className="class-time">{slot.label} – {endTime}</span>
-                                      </div>
-                                    </div>
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+          {DAYS.map((day) => (
+            <div key={day} className="week-day-section">
+              <div className="week-day-header" onClick={() => setExpandedTeacher(expandedTeacher === day ? null : day)}>
+                <span>{expandedTeacher === day ? "▼" : "▶"}</span>
+                <h3>{day}</h3>
               </div>
-            );
-          })}
+              {expandedTeacher === day && (
+                <div className="week-day-content">
+                  <table className="overall-day-table">
+                    {renderTableHeaders()}
+                    <tbody>{renderGridRows(day)}</tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
