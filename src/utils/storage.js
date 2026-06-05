@@ -256,6 +256,7 @@ export function updateStudent(id, updates) {
       }
       Object.assign(student, updates);
       saveStudents(data);
+      syncStudentsToTeachers();
     }
     return data;
   } catch (err) {

@@ -12,8 +12,16 @@ function ScheduleGrid({
   onCellRightClick,
 }) {
   const students = useMemo(() => loadStudents(), []);
-  const studentNames = useMemo(() => {
-    return new Set(students.map(s => (s.name || "").trim().toLowerCase()));
+  
+  // Create a map for quick lookup by normalized name
+  const studentMap = useMemo(() => {
+    const map = new Map();
+    students.forEach(s => {
+      if (s.name) {
+        map.set(s.name.trim().toLowerCase(), s);
+      }
+    });
+    return map;
   }, [students]);
   const getClassForCell = (day, timeKey) => {
     const cls = schedule[day]?.[timeKey];
@@ -117,12 +125,16 @@ function ScheduleGrid({
                   if (classInfo && !slot.isLunch) {
                     const normalizedName = (classInfo.studentName || "").trim().toLowerCase();
                     const isFree = normalizedName === "free";
-                    const isKnownStudent = studentNames.has(normalizedName);
+                    const studentData = studentMap.get(normalizedName);
                     
-                    // If not in database and not FREE, it's a memo (likely Face-to-Face)
-                    // If in database, use its saved classType
+                    // Priority 1: If in database, use database's classType
+                    // Priority 2: If "FREE", use its own logic
+                    // Priority 3: If not in database, default to face-to-face (it's a memo)
                     let effectiveType = classInfo.classType?.toLowerCase() || "online";
-                    if (!isKnownStudent && !isFree) {
+                    
+                    if (studentData) {
+                      effectiveType = (studentData.classType || "online").toLowerCase();
+                    } else if (!isFree) {
                       effectiveType = "face-to-face";
                     }
 
