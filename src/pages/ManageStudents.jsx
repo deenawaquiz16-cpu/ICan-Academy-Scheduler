@@ -280,6 +280,47 @@ function ManageStudents({ onBack }) {
     );
   };
 
+  const formatHistory = (student) => {
+    const history = student.previousTeachers || [];
+    
+    const handleAdd = () => {
+      const name = prompt("Enter previous teacher name:");
+      if (name) {
+        const updatedHistory = [...history, { name: name.trim(), date: new Date().toLocaleDateString() }];
+        updateStudent(student.id, { previousTeachers: updatedHistory });
+        setStudents(loadStudents());
+      }
+    };
+
+    if (history.length === 0) return (
+      <button className="add-inline-history-btn" onClick={handleAdd}>+ Add</button>
+    );
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {history.map((pt, i) => (
+          <div key={i} className="history-pill" title={`Added on ${pt.date}`}>
+            {pt.name}
+            <button 
+              className="remove-history-btn" 
+              onClick={(e) => {
+                e.stopPropagation();
+                if(confirm(`Remove ${pt.name} from history?`)) {
+                  const updatedHistory = history.filter((_, idx) => idx !== i);
+                  updateStudent(student.id, { previousTeachers: updatedHistory });
+                  setStudents(loadStudents());
+                }
+              }}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <button className="add-history-plus" onClick={handleAdd}>+</button>
+      </div>
+    );
+  };
+
   return (
     <div className="manage-page">
       <div className="manage-header">
@@ -351,7 +392,7 @@ function ManageStudents({ onBack }) {
                 <th>Teacher</th>
                 <th>Start Date</th>
                 <th>End Date</th>
-                <th>History</th>
+                <th>Previous Teachers</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -410,7 +451,7 @@ function ManageStudents({ onBack }) {
                   </td>
                   <td><input type="date" value={s.startDate || ""} onChange={(e) => { updateStudent(s.id, { startDate: e.target.value }); setStudents(loadStudents()); }} /></td>
                   <td><input type="date" value={s.endDate || ""} onChange={(e) => { updateStudent(s.id, { endDate: e.target.value }); setStudents(loadStudents()); }} /></td>
-                  <td><div className="history-summary">{s.previousTeachers?.length || 0} prev</div></td>
+                  <td>{formatHistory(s)}</td>
                   <td><button className="delete-row-btn" onClick={() => { if(confirm(`Delete ${s.name}?`)) { deleteStudent(s.id); setStudents(loadStudents()); } }}>🗑️</button></td>
                 </tr>
               ))}
