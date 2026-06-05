@@ -179,7 +179,13 @@ function SchedulePage({ teacherName, onBack }) {
         </div>
       </div>
 
-      <ScheduleGrid schedule={teacherSchedule} blocks={teacherBlocks} onCellClick={handleCellClick} onCellRightClick={handleCellRightClick} />
+      <ScheduleGrid 
+        teacherName={teacherName}
+        schedule={teacherSchedule} 
+        blocks={teacherBlocks} 
+        onCellClick={handleCellClick} 
+        onCellRightClick={handleCellRightClick} 
+      />
 
       {formOpen && selectedCell && (
         <ClassForm 

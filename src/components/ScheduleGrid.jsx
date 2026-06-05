@@ -2,6 +2,7 @@ import { DAYS, DAYS_SHORT, TIME_SLOTS, getOccupiedSlots } from "../utils/timeSlo
 import "../App.css";
 
 function ScheduleGrid({
+  teacherName,
   schedule,
   blocks,
   firstSelectedCell,
@@ -51,6 +52,26 @@ function ScheduleGrid({
       <div className="schedule-table-container">
         <table className="schedule-table">
           <thead>
+            {/* Spreadsheet Style Teacher Header */}
+            <tr>
+              <th colSpan="8" className="spreadsheet-teacher-header">
+                {teacherName || "Teacher"} Schedule
+              </th>
+            </tr>
+            {/* Spreadsheet Style Legend Row */}
+            <tr className="legend-row">
+              <th className="legend-label">Template</th>
+              <th className="legend-item legend-free">FREE</th>
+              <th className="legend-item legend-f2f">Student Name</th>
+              <th className="legend-item legend-online">[Online] Student Name</th>
+              <th className="legend-item legend-reserved">[Reserved]</th>
+              <th colSpan="3" className="legend-empty"></th>
+            </tr>
+            {/* Spreadsheet Style Meta Header */}
+            <tr className="meta-header-row">
+              <th className="time-column-meta">TIME (PT)</th>
+              <th colSpan="7" className="days-column-meta">Days</th>
+            </tr>
             <tr>
               <th className="time-column-header">Time</th>
               {DAYS_SHORT.map((day, i) => (
@@ -86,11 +107,8 @@ function ScheduleGrid({
                   
                   const isContinuation = classInfo && !isStartOfBlock;
 
-                  // 1. Class Start Cell
-                  if (isStartOfBlock && !slot.isLunch) {
-                    const blockOccupied = getOccupiedSlots(classInfo.startKey, classInfo.duration || 25)
-                      .filter(k => (slot.key < "12:00" ? k < "12:00" : k >= "13:00"));
-
+                  // 1. Class Cell (Start or Continuation)
+                  if (classInfo && !slot.isLunch) {
                     const isOnline = classInfo.classType?.toLowerCase() === "online";
                     const typeClass = isOnline ? "online" : "f2f";
                     const studentStatus = classInfo.studentStatus || "active";
@@ -99,7 +117,7 @@ function ScheduleGrid({
                     return (
                       <td
                         key={cellKey}
-                        className={`schedule-cell class-${typeClass} class-start`}
+                        className={`schedule-cell class-${typeClass} ${isStartOfBlock ? "class-start" : "class-continuation"}`}
                         onClick={() => onCellClick(day, slot)}
                       >
                         <div className="class-block" title={`${classInfo.studentName} (${classInfo.classType}) - ${classInfo.duration}min\nBook: ${classInfo.book || "N/A"}`}>
@@ -112,25 +130,12 @@ function ScheduleGrid({
                               {isOnline ? "💻" : "👤"} {classInfo.classType}
                             </span>
                           </div>
-                          <div className="class-time-tag">{classInfo.duration}m</div>
                         </div>
                       </td>
                     );
                   }
 
-                  // 2. Class Continuation Cell
-                  if (isContinuation && !slot.isLunch) {
-                    const typeClass = classInfo.classType?.toLowerCase() === "online" ? "online" : "f2f";
-                    return (
-                      <td 
-                        key={cellKey} 
-                        className={`schedule-cell class-${typeClass} class-continuation`}
-                        onClick={() => onCellClick(day, slot)}
-                      ></td>
-                    );
-                  }
-
-                  // 3. Blocked Cell
+                  // 2. Blocked Cell
                   if (blocked && !slot.isLunch) {
                     return (
                       <td

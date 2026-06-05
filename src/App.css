@@ -643,13 +643,88 @@ body {
   z-index: 10;
 }
 
+.spreadsheet-teacher-header {
+  background: #2563eb;
+  color: white;
+  padding: 8px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  text-align: center;
+  border: 1px solid #1d4ed8;
+}
+
+.legend-row {
+  background: #f8fafc;
+}
+
+.legend-label {
+  background: var(--primary);
+  color: white;
+  font-size: 0.7rem;
+  padding: 4px;
+}
+
+.legend-item {
+  font-size: 0.7rem;
+  padding: 4px;
+  border: 1px solid #cbd5e1;
+  text-align: center;
+  font-weight: 700;
+}
+
+.legend-free {
+  background: #ef4444;
+  color: white;
+}
+
+.legend-f2f {
+  background: #22c55e;
+  color: white;
+}
+
+.legend-online {
+  background: #fde047;
+  color: #854d0e;
+}
+
+.legend-reserved {
+  background: #f97316;
+  color: white;
+}
+
+.legend-empty {
+  background: #e2e8f0;
+}
+
+.meta-header-row {
+  background: white;
+}
+
+.time-column-meta {
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 4px;
+  border: 1px solid #cbd5e1;
+}
+
+.days-column-meta {
+  background: white;
+  color: #1e293b;
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 4px;
+  border: 1px solid #cbd5e1;
+}
+
 .time-column-header {
   background: var(--primary);
   color: white;
   padding: 0.5rem 0.25rem;
   font-weight: 600;
-  width: 56px;
-  min-width: 56px;
+  width: 80px;
+  min-width: 80px;
 }
 
 .day-header {
@@ -658,7 +733,7 @@ body {
   padding: 0.5rem 0.15rem;
   font-weight: 600;
   text-align: center;
-  width: calc((100% - 56px) / 7);
+  width: calc((100% - 80px) / 7);
   min-width: 0;
 }
 
@@ -677,8 +752,8 @@ body {
   text-align: center;
   font-weight: 500;
   color: var(--text-secondary);
-  width: 56px;
-  min-width: 56px;
+  width: 80px;
+  min-width: 80px;
   border-right: 1px solid #cbd5e1;
   border-bottom: 1px solid #cbd5e1;
 }
@@ -711,7 +786,7 @@ body {
 
 .schedule-cell {
   border: 1px solid #cbd5e1;
-  padding: 1px;
+  padding: 0; /* Remove padding for spreadsheet style */
   height: 44px;
   vertical-align: top;
   cursor: pointer;
@@ -719,37 +794,26 @@ body {
   position: relative;
 }
 
-/* Solid Grid: Remove borders between continuation cells */
-.class-start {
-  border-bottom: none !important;
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
-}
-
+/* Spreadsheet Style Grid */
+.class-start,
 .class-continuation {
-  border-top: none !important;
-  border-bottom: none !important;
+  border: 1px solid #cbd5e1 !important;
   border-radius: 0 !important;
 }
 
-.class-continuation:last-child,
-tr:last-child .class-continuation {
-  border-bottom: 1px solid #cbd5e1 !important;
-  border-bottom-left-radius: 8px !important;
-  border-bottom-right-radius: 8px !important;
-}
-
 /* Ensure the background color matches the parent class */
+.class-online,
 .class-online.class-continuation {
-  background: #eef2ff;
+  background: #eef2ff !important;
 }
 
+.class-f2f,
 .class-f2f.class-continuation {
-  background: #ecfdf5;
+  background: #ecfdf5 !important;
 }
 
 .schedule-cell:hover {
-  background: #f8fafc;
+  filter: brightness(0.95);
 }
 
 .selected-cell {
@@ -804,7 +868,7 @@ tr:last-child .class-continuation {
 .class-block {
   height: 100%;
   padding: 4px 6px;
-  border-radius: 8px;
+  border-radius: 0; /* No radius for spreadsheet style */
   font-size: 0.55rem;
   overflow: hidden;
   line-height: 1.3;
@@ -813,7 +877,6 @@ tr:last-child .class-continuation {
   gap: 2px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .schedule-cell.class-online:hover .class-block,
@@ -842,9 +905,21 @@ tr:last-child .class-continuation {
   text-overflow: ellipsis;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center; /* Centered for spreadsheet style */
   font-size: 0.65rem;
   color: var(--text);
+  width: 100%;
+}
+
+/* Red FREE style for spreadsheet */
+.class-block[title*="FREE"] {
+  background: #ef4444 !important;
+  color: white !important;
+}
+
+.class-block[title*="FREE"] .class-student,
+.class-block[title*="FREE"] .class-type-badge {
+  color: white !important;
 }
 
 .student-name-text {
