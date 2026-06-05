@@ -116,21 +116,15 @@ function ScheduleGrid({
                   if (classInfo && !slot.isLunch) {
                     const normalizedName = (classInfo.studentName || "").trim().toLowerCase();
                     const isFree = normalizedName === "free";
-                    const studentData = studentMap.get(normalizedName);
                     
-                    // Priority 1: Use the type specifically saved for THIS class entry if it exists
-                    // Priority 2: If student is in database, use their default database classType
-                    // Priority 3: Fallback for memos (not in database, not FREE) -> default to face-to-face
-                    let effectiveType = classInfo.classType?.toLowerCase();
+                    // The GOLDEN RULE: 
+                    // 1. Is it a student in our database? -> ALWAYS ONLINE (Blue)
+                    // 2. Is it a manual memo (not in database)? -> ALWAYS FACE-TO-FACE (Green)
+                    // 3. Is it "FREE"? -> ONLINE (Red/Style)
                     
-                    if (!effectiveType) {
-                      if (studentData) {
-                        effectiveType = (studentData.classType || "online").toLowerCase();
-                      } else if (!isFree) {
-                        effectiveType = "face-to-face";
-                      } else {
-                        effectiveType = "online"; // Default for FREE
-                      }
+                    let effectiveType = "face-to-face";
+                    if (isFree || studentMap.has(normalizedName)) {
+                      effectiveType = "online";
                     }
 
                     const isOnline = effectiveType === "online";

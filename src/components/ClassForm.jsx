@@ -189,13 +189,6 @@ function ClassForm({
                   ))}
                 </select>
               </div>
-              <div className="form-group half">
-                <label>Class Type</label>
-                <select value={classType} onChange={(e) => setClassType(e.target.value)}>
-                  <option value="online">💻 Online</option>
-                  <option value="face-to-face">👤 Face-to-Face</option>
-                </select>
-              </div>
             </div>
 
             {/* Student Selection */}
