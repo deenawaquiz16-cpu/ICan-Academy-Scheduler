@@ -225,37 +225,19 @@ function ClassForm({
               </div>
 
               {!isEditing && (
-                <div className="student-select-grid" style={{ marginTop: '12px' }}>
-                  <button
-                    type="button"
-                    className={`student-select-card ${studentName === "" ? "selected" : ""}`}
-                    onClick={() => handleStudentSelect("")}
+                <div className="student-select-dropdown-area" style={{ marginTop: '10px' }}>
+                  <select 
+                    className="student-compact-select"
+                    value={studentName}
+                    onChange={(e) => handleStudentSelect(e.target.value)}
                   >
-                    <span className="student-select-placeholder">— Or Select Existing —</span>
-                  </button>
-                  {availableStudents.map((s) => {
-                    const studentKey = s.name || s;
-                    const studentData = allStudents.find((st) => st.name === studentKey) || {};
-                    const isSelected = studentName === studentKey;
-                    const studentStatus = studentData.status || "active";
-                    return (
-                      <button
-                        key={studentKey}
-                        type="button"
-                        className={`student-select-card ${isSelected ? "selected" : ""}`}
-                        onClick={() => handleStudentSelect(studentKey)}
-                      >
-                        <div className="student-select-info">
-                          <span className="student-select-english">{studentKey}</span>
-                        </div>
-                        <div className="student-select-meta">
-                          <span className={`student-status-badge student-status-${studentStatus}`}>
-                            {studentStatus === "active" ? "🟢" : studentStatus === "on-break" ? "🟡" : "🔴"}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
+                    <option value="">— Select Existing Student —</option>
+                    {availableStudents.map((s) => (
+                      <option key={s.id || s.name} value={s.name}>
+                        {s.name} {(s.status && s.status !== 'active') ? `(${s.status})` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
             </div>
