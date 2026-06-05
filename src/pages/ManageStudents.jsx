@@ -63,6 +63,12 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
     e.preventDefault();
     if (!form.name.trim()) return;
     onAdd(form);
+    // Reset form for next use
+    setForm({
+      name: "", gradeLevel: "", classType: "online", currentTeacher: "",
+      startDate: new Date().toISOString().split("T")[0], endDate: "", className: "", book: "",
+      days: [], timeSlot: "08:00", duration: 25, previousTeacher: ""
+    });
     onClose();
   };
 
