@@ -110,7 +110,8 @@ function ClassForm({
     e.preventDefault();
     setError("");
 
-    const finalStudentName = isF2F ? manualStudentName.trim() : studentName;
+    // If there's manual text, use it. Otherwise use the selected student name.
+    const finalStudentName = manualStudentName.trim() || studentName;
 
     if (!finalStudentName) {
       setError("Please select or enter a student name.");
@@ -191,8 +192,8 @@ function ClassForm({
               <div className="form-group half">
                 <label>Class Type</label>
                 <select value={classType} onChange={(e) => setClassType(e.target.value)}>
-                  <option value="Online">💻 Online</option>
-                  <option value="Face-to-Face">👤 Face-to-Face</option>
+                  <option value="online">💻 Online</option>
+                  <option value="face-to-face">👤 Face-to-Face</option>
                 </select>
               </div>
             </div>
@@ -209,8 +210,9 @@ function ClassForm({
                   className="manual-student-input"
                   value={manualStudentName}
                   onChange={(e) => {
-                    setManualStudentName(e.target.value);
-                    const match = allStudents.find(s => s.name.toLowerCase() === e.target.value.trim().toLowerCase());
+                    const val = e.target.value;
+                    setManualStudentName(val);
+                    const match = allStudents.find(s => s.name.toLowerCase() === val.trim().toLowerCase());
                     if (match) setStudentName(match.name);
                     else setStudentName("");
                   }}
