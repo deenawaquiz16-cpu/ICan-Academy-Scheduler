@@ -174,7 +174,7 @@ function ManageStudents({ onBack }) {
     return [...new Set([...(t.academy || []), ...(t.wfh || [])])].sort();
   }, []);
 
-  const [students, setStudents] = useState(() => sortStudentsFn(loadStudents(), "name"));
+  const [students, setStudents] = useState(() => loadStudents());
   const [isAdding, setIsAdding] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTeacher, setFilterTeacher] = useState("");
