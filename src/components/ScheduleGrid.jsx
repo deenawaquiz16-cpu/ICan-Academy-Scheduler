@@ -125,6 +125,9 @@ function ScheduleGrid({
                             <span className="student-name-text">{classInfo.studentName}</span>
                             {statusIndicator && <span className="student-status-indicator" title={`Status: ${studentStatus}`}>{statusIndicator}</span>}
                           </div>
+                          {classInfo.className && (
+                            <div className="class-name-tag">{classInfo.className}</div>
+                          )}
                           <div className="class-details">
                             <span className={`class-type-badge ${typeClass}`}>
                               {isOnline ? "💻" : "👤"} {classInfo.classType}

@@ -911,6 +911,18 @@ body {
   width: 100%;
 }
 
+.class-name-tag {
+  font-size: 0.5rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: -2px;
+}
+
 /* Red FREE style for spreadsheet */
 .class-block[title*="FREE"] {
   background: #ef4444 !important;
