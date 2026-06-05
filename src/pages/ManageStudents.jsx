@@ -190,8 +190,24 @@ function ManageStudents({ onBack }) {
     setStudents(loadStudents());
   };
 
-  const formatSchedule = (schedules) => {
-    if (!schedules || schedules.length === 0) return <span style={{fontSize: '11px', color: '#999'}}>Not set</span>;
+  const formatSchedule = (student) => {
+    const schedules = student.schedules;
+    if (!schedules || schedules.length === 0) return (
+      <button 
+        className="add-inline-sched-btn"
+        onClick={() => {
+          addScheduleToStudent(student.id, {
+            days: ["Monday"],
+            timeSlot: "08:00",
+            duration: 25,
+            classType: student.classType || "online"
+          });
+          setStudents(loadStudents());
+        }}
+      >
+        + Set
+      </button>
+    );
     
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -200,8 +216,45 @@ function ManageStudents({ onBack }) {
             ? sched.days.map(d => DAY_SHORT[d] || d.slice(0,3)).join(", ") 
             : "No days";
           const startTimeLabel = TIME_SLOTS.find(t => t.key === (sched.timeSlot || "08:00"))?.start || "N/A";
+          
           return (
-            <div key={i} style={{fontSize: '10px', background: '#f0f4f8', padding: '2px 6px', borderRadius: '4px', border: '1px solid #d1d9e0'}}>
+            <div 
+              key={i} 
+              className="editable-schedule-pill"
+              onClick={() => {
+                const newDaysInput = prompt("Enter days (e.g. Mon, Wed, Fri):", daysStr);
+                if (newDaysInput === null) return;
+                
+                const DAY_CLEAN = {
+                  "mon": "Monday", "tue": "Tuesday", "wed": "Wednesday", "thu": "Thursday", 
+                  "fri": "Friday", "sat": "Saturday", "sun": "Sunday"
+                };
+                
+                const newDays = newDaysInput.split(",")
+                  .map(d => d.trim().toLowerCase().slice(0,3))
+                  .map(d => DAY_CLEAN[d])
+                  .filter(Boolean);
+
+                const newTime = prompt("Enter time (e.g. 5:00 PM):", startTimeLabel);
+                if (newTime === null) return;
+                
+                const matchedSlot = TIME_SLOTS.find(ts => ts.start.toLowerCase() === newTime.toLowerCase().trim());
+                
+                if (newDays.length > 0 && matchedSlot) {
+                  const updatedSchedules = [...student.schedules];
+                  updatedSchedules[i] = {
+                    ...sched,
+                    days: newDays,
+                    timeSlot: matchedSlot.key
+                  };
+                  updateStudent(student.id, { schedules: updatedSchedules });
+                  setStudents(loadStudents());
+                } else {
+                  alert("Invalid days or time. Please try again (e.g. 'Mon, Wed' and '5:00 PM')");
+                }
+              }}
+              title="Click to edit schedule"
+            >
               {daysStr} | {startTimeLabel}
             </div>
           );
@@ -299,11 +352,25 @@ function ManageStudents({ onBack }) {
                   </td>
                   <td><input className="class-inline-input" defaultValue={s.className || ""} onBlur={(e) => { updateStudent(s.id, { className: e.target.value.trim() }); setStudents(loadStudents()); }} /></td>
                   <td>
-                    <select value={s.classType || "online"} onChange={(e) => { updateStudent(s.id, { classType: e.target.value }); setStudents(loadStudents()); }}>
+                    <select 
+                      value={s.classType || "online"} 
+                      onChange={(e) => { 
+                        const newType = e.target.value;
+                        const updatedSchedules = (s.schedules || []).map(sched => ({
+                          ...sched,
+                          classType: newType
+                        }));
+                        updateStudent(s.id, { 
+                          classType: newType,
+                          schedules: updatedSchedules
+                        }); 
+                        setStudents(loadStudents()); 
+                      }}
+                    >
                       {CLASS_TYPES.map(ct => <option key={ct.value} value={ct.value}>{ct.icon} {ct.label}</option>)}
                     </select>
                   </td>
-                  <td>{formatSchedule(s.schedules)}</td>
+                  <td>{formatSchedule(s)}</td>
                   <td>
                     <select value={s.currentTeacher || ""} onChange={(e) => { updateStudent(s.id, { currentTeacher: e.target.value }); setStudents(loadStudents()); }}>
                       <option value="">—</option>
