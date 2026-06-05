@@ -72,15 +72,6 @@ function ScheduleGrid({
                 {teacherName || "Teacher"} Schedule
               </th>
             </tr>
-            {/* Spreadsheet Style Legend Row */}
-            <tr className="legend-row">
-              <th className="legend-label">Template</th>
-              <th className="legend-item legend-free">FREE</th>
-              <th className="legend-item legend-f2f">Student Name</th>
-              <th className="legend-item legend-online">[Online] Student Name</th>
-              <th className="legend-item legend-reserved">[Reserved]</th>
-              <th colSpan="3" className="legend-empty"></th>
-            </tr>
             {/* Spreadsheet Style Meta Header */}
             <tr className="meta-header-row">
               <th className="time-column-meta">TIME (PT)</th>
