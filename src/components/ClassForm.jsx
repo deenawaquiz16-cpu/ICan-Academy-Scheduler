@@ -59,6 +59,7 @@ function ClassForm({
         if (studentData.className) setClassName(studentData.className);
         if (studentData.book) setBook(studentData.book);
         if (studentData.currentTeacher) setSelectedTeacher(studentData.currentTeacher);
+        if (studentData.classType) setClassType(studentData.classType.toLowerCase());
         if (studentData.schedules && studentData.schedules.length > 0) {
           const firstSched = studentData.schedules[0];
           if (firstSched.duration) setDuration(firstSched.duration);

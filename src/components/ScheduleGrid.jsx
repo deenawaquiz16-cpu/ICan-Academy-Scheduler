@@ -12,7 +12,9 @@ function ScheduleGrid({
   onCellRightClick,
 }) {
   const students = useMemo(() => loadStudents(), []);
-  const studentNames = useMemo(() => new Set(students.map(s => s.name)), [students]);
+  const studentNames = useMemo(() => {
+    return new Set(students.map(s => (s.name || "").trim().toLowerCase()));
+  }, [students]);
   const getClassForCell = (day, timeKey) => {
     const cls = schedule[day]?.[timeKey];
     if (!cls || timeKey === "12:00") return null;
@@ -113,8 +115,9 @@ function ScheduleGrid({
 
                   // 1. Class Cell (Start or Continuation)
                   if (classInfo && !slot.isLunch) {
-                    const isFree = classInfo.studentName?.toUpperCase() === "FREE";
-                    const isKnownStudent = studentNames.has(classInfo.studentName);
+                    const normalizedName = (classInfo.studentName || "").trim().toLowerCase();
+                    const isFree = normalizedName === "free";
+                    const isKnownStudent = studentNames.has(normalizedName);
                     
                     // If not in database and not FREE, it's a memo (likely Face-to-Face)
                     // If in database, use its saved classType
