@@ -1,4 +1,6 @@
+import { useState, useMemo } from "react";
 import { DAYS, DAYS_SHORT, TIME_SLOTS, getOccupiedSlots } from "../utils/timeSlots";
+import { loadStudents } from "../utils/storage";
 import "../App.css";
 
 function ScheduleGrid({
@@ -9,6 +11,8 @@ function ScheduleGrid({
   onCellClick,
   onCellRightClick,
 }) {
+  const students = useMemo(() => loadStudents(), []);
+  const studentNames = useMemo(() => new Set(students.map(s => s.name)), [students]);
   const getClassForCell = (day, timeKey) => {
     const cls = schedule[day]?.[timeKey];
     if (!cls || timeKey === "12:00") return null;
@@ -109,7 +113,17 @@ function ScheduleGrid({
 
                   // 1. Class Cell (Start or Continuation)
                   if (classInfo && !slot.isLunch) {
-                    const isOnline = classInfo.classType?.toLowerCase() === "online";
+                    const isFree = classInfo.studentName?.toUpperCase() === "FREE";
+                    const isKnownStudent = studentNames.has(classInfo.studentName);
+                    
+                    // If not in database and not FREE, it's a memo (likely Face-to-Face)
+                    // If in database, use its saved classType
+                    let effectiveType = classInfo.classType?.toLowerCase() || "online";
+                    if (!isKnownStudent && !isFree) {
+                      effectiveType = "face-to-face";
+                    }
+
+                    const isOnline = effectiveType === "online";
                     const typeClass = isOnline ? "online" : "f2f";
                     const studentStatus = classInfo.studentStatus || "active";
                     const statusIndicator = studentStatus === "on-break" ? "🟡" : studentStatus === "stopped" ? "🔴" : "";
@@ -120,7 +134,7 @@ function ScheduleGrid({
                         className={`schedule-cell class-${typeClass} ${isStartOfBlock ? "class-start" : "class-continuation"}`}
                         onClick={() => onCellClick(day, slot)}
                       >
-                        <div className="class-block" title={`${classInfo.studentName} (${classInfo.classType}) - ${classInfo.duration}min\nBook: ${classInfo.book || "N/A"}`}>
+                        <div className="class-block" title={`${classInfo.studentName} (${effectiveType}) - ${classInfo.duration}min\nBook: ${classInfo.book || "N/A"}`}>
                           <div className="class-student">
                             <span className="student-name-text">{classInfo.studentName}</span>
                             {statusIndicator && <span className="student-status-indicator" title={`Status: ${studentStatus}`}>{statusIndicator}</span>}
@@ -130,7 +144,7 @@ function ScheduleGrid({
                           )}
                           <div className="class-details">
                             <span className={`class-type-badge ${typeClass}`}>
-                              {isOnline ? "💻" : "👤"} {classInfo.classType}
+                              {isOnline ? "💻" : "👤"} {effectiveType}
                             </span>
                           </div>
                         </div>
