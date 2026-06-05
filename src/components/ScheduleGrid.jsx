@@ -118,15 +118,19 @@ function ScheduleGrid({
                     const isFree = normalizedName === "free";
                     const studentData = studentMap.get(normalizedName);
                     
-                    // Priority 1: If in database, use database's classType
-                    // Priority 2: If "FREE", use its own logic
-                    // Priority 3: If not in database, default to face-to-face (it's a memo)
-                    let effectiveType = classInfo.classType?.toLowerCase() || "online";
+                    // Priority 1: Use the type specifically saved for THIS class entry if it exists
+                    // Priority 2: If student is in database, use their default database classType
+                    // Priority 3: Fallback for memos (not in database, not FREE) -> default to face-to-face
+                    let effectiveType = classInfo.classType?.toLowerCase();
                     
-                    if (studentData) {
-                      effectiveType = (studentData.classType || "online").toLowerCase();
-                    } else if (!isFree) {
-                      effectiveType = "face-to-face";
+                    if (!effectiveType) {
+                      if (studentData) {
+                        effectiveType = (studentData.classType || "online").toLowerCase();
+                      } else if (!isFree) {
+                        effectiveType = "face-to-face";
+                      } else {
+                        effectiveType = "online"; // Default for FREE
+                      }
                     }
 
                     const isOnline = effectiveType === "online";
