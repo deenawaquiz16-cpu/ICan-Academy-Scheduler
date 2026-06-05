@@ -137,6 +137,17 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
             </div>
 
             <div className="modal-field-row">
+              <div className="modal-field">
+                <label>Class Name</label>
+                <input type="text" value={form.className} onChange={(e) => setForm({ ...form, className: e.target.value })} placeholder="e.g. Reading" />
+              </div>
+              <div className="modal-field">
+                <label>Book</label>
+                <input type="text" value={form.book} onChange={(e) => setForm({ ...form, book: e.target.value })} placeholder="e.g. Phonics 1" />
+              </div>
+            </div>
+
+            <div className="modal-field-row">
                <div className="modal-field">
                  <label>Start Date</label>
                  <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
@@ -299,6 +310,8 @@ function ManageStudents({ onBack }) {
               currentTeacher: data.currentTeacher,
               startDate: data.startDate,
               endDate: data.endDate,
+              className: data.className,
+              book: data.book,
               previousTeachers: data.previousTeacher ? [{ name: data.previousTeacher, date: new Date().toLocaleDateString() }] : []
             });
 
@@ -307,7 +320,9 @@ function ManageStudents({ onBack }) {
                 days: data.days,
                 timeSlot: data.timeSlot,
                 duration: data.duration,
-                classType: data.classType
+                classType: data.classType,
+                className: data.className,
+                book: data.book
               });
             }
             
@@ -338,7 +353,12 @@ function ManageStudents({ onBack }) {
               {filteredStudents.map((s, index) => (
                 <tr key={s.id}>
                   <td>{index + 1}</td>
-                  <td><input className="name-inline-input" defaultValue={s.name} onBlur={(e) => { updateStudent(s.id, { name: e.target.value.trim() }); setStudents(loadStudents()); }} /></td>
+                  <td><input 
+                    className="name-inline-input" 
+                    defaultValue={s.name} 
+                    onBlur={(e) => { updateStudent(s.id, { name: e.target.value.trim() }); setStudents(loadStudents()); }} 
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+                  /></td>
                   <td>
                     <select value={s.gradeLevel || ""} onChange={(e) => { updateStudent(s.id, { gradeLevel: e.target.value }); setStudents(loadStudents()); }}>
                       <option value="">—</option>
@@ -350,7 +370,12 @@ function ManageStudents({ onBack }) {
                       {STUDENT_STATUSES.map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
                     </select>
                   </td>
-                  <td><input className="class-inline-input" defaultValue={s.className || ""} onBlur={(e) => { updateStudent(s.id, { className: e.target.value.trim() }); setStudents(loadStudents()); }} /></td>
+                  <td><input 
+                    className="class-inline-input" 
+                    defaultValue={s.className || ""} 
+                    onBlur={(e) => { updateStudent(s.id, { className: e.target.value.trim() }); setStudents(loadStudents()); }} 
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+                  /></td>
                   <td>
                     <select 
                       value={s.classType || "online"} 
