@@ -41,9 +41,50 @@
 /* Specific Column Widths */
 .student-table th:nth-child(2), /* Name */
 .student-table td:nth-child(2) {
-  min-width: 180px;
-  width: 220px;
+  min-width: 250px;
+  width: 300px;
+  position: sticky;
+  left: 100px; /* Offset by the # (index) column width */
+  background: white;
+  z-index: 5;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
 }
+
+.student-table th:nth-child(2) {
+  z-index: 15;
+  background: #f8f9fa;
+}
+
+.student-table th:nth-child(1), /* # Index */
+.student-table td:nth-child(1) {
+  width: 50px;
+  min-width: 50px;
+  text-align: center;
+  position: sticky;
+  left: 0;
+  background: #f8f9fa;
+  z-index: 5;
+  border-right: 1px solid var(--border);
+}
+
+thead th:nth-child(1) {
+  z-index: 15;
+}
+
+.name-inline-input {
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--primary);
+  border: 1px solid transparent;
+  padding: 6px 10px;
+  transition: all 0.2s;
+}
+
+.name-inline-input:hover {
+  background: #fff;
+  border-color: var(--border);
+}
+
 
 .student-table th:nth-child(5), /* Class */
 .student-table td:nth-child(5) {
