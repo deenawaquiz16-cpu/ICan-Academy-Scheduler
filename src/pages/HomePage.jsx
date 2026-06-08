@@ -1,69 +1,72 @@
 import "../App.css";
 
-function HomePage({ onSelectCategory, onManageTeachers, onManageStudents, onOverallSchedule, onFindAvailability, onCalendar, stats }) {
+function HomePage({ stats, onSelectCategory, onManageStudents }) {
   const { academyCount = 0, wfhCount = 0, totalStudents = 0, totalClasses = 0 } = stats || {};
-  const totalTeachers = academyCount + wfhCount;
 
   return (
-    <div className="home-page">
-      <div className="home-header">
-        <h1>🤖 ICan Academy</h1>
-        <p className="subtitle">AI-Powered Learning Scheduler</p>
-      </div>
-      
-      <div className="category-cards">
-        <button
-          className="category-card main-dir teachers"
-          onClick={() => onSelectCategory(null)}
-        >
-          <div className="card-icon">👩‍🏫</div>
-          <h2>Teachers</h2>
-          <p>View all academy & remote teachers</p>
-          <div className="card-data-display">
-            <div className="stat-group">
-              <span className="big-stat-number">{academyCount}</span>
-              <span className="big-stat-label">Academy</span>
+    <div className="home-page-dashboard">
+      <header className="dashboard-header">
+        <div className="welcome-section">
+          <h1>Welcome back, Admin 👋</h1>
+          <p>Here's what's happening with ICan Academy today.</p>
+        </div>
+      </header>
+
+      <div className="dashboard-grid">
+        <div className="dashboard-card main-stats">
+          <h2>Overview</h2>
+          <div className="stats-display">
+            <div className="stat-item">
+              <span className="stat-value">{totalStudents}</span>
+              <span className="stat-label">Active Students</span>
             </div>
             <div className="stat-divider"></div>
-            <div className="stat-group">
-              <span className="big-stat-number">{wfhCount}</span>
-              <span className="big-stat-label">WFH</span>
-            </div>
-          </div>
-        </button>
-
-        <button
-          className="category-card main-dir students"
-          onClick={onManageStudents}
-        >
-          <div className="card-icon">🎓</div>
-          <h2>Students</h2>
-          <p>Manage all student directory and info</p>
-          <div className="card-data-display">
-            <div className="stat-group">
-              <span className="big-stat-number">{totalStudents}</span>
-              <span className="big-stat-label">Students</span>
+            <div className="stat-item">
+              <span className="stat-value">{totalClasses}</span>
+              <span className="stat-label">Total Classes</span>
             </div>
             <div className="stat-divider"></div>
-            <div className="stat-group">
-              <span className="big-stat-number">{totalClasses}</span>
-              <span className="big-stat-label">Classes</span>
+            <div className="stat-item">
+              <span className="stat-value">{academyCount + wfhCount}</span>
+              <span className="stat-label">Teachers</span>
             </div>
           </div>
-        </button>
+        </div>
+
+        <div className="dashboard-card quick-actions">
+          <h2>Quick Navigation</h2>
+          <div className="action-buttons">
+            <button className="dashboard-action-btn" onClick={() => onSelectCategory("academy")}>
+              <span className="action-icon">🏢</span>
+              <div className="action-text">
+                <strong>Academy Teachers</strong>
+                <span>View on-site staff</span>
+              </div>
+            </button>
+            <button className="dashboard-action-btn" onClick={() => onSelectCategory("wfh")}>
+              <span className="action-icon">🏠</span>
+              <div className="action-text">
+                <strong>WFH Teachers</strong>
+                <span>Remote instructors</span>
+              </div>
+            </button>
+            <button className="dashboard-action-btn" onClick={onManageStudents}>
+              <span className="action-icon">🎓</span>
+              <div className="action-text">
+                <strong>Student Records</strong>
+                <span>Manage directory</span>
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div className="home-manage-links">
-        <button className="manage-link-btn" onClick={onOverallSchedule}>
-          📋 Overall Schedule
-        </button>
-        <button className="manage-link-btn" onClick={onCalendar}>
-          📅 Calendar & Notes
-        </button>
-        <button className="manage-link-btn" onClick={onFindAvailability}>
-          🔍 Find Availability
-        </button>
-      </div>
+      <footer className="dashboard-footer">
+        <div className="ai-tip">
+          <span className="tip-icon">💡</span>
+          <p><strong>Pro Tip:</strong> You can quickly find teacher availability using the "Find Availability" tool in the sidebar.</p>
+        </div>
+      </footer>
     </div>
   );
 }
