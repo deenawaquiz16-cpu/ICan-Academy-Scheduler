@@ -1,12 +1,8 @@
 import { useState, useMemo } from "react";
 import { loadSchedules, loadTeachers, loadStudents } from "../utils/storage";
-import { TIME_SLOTS, getClassEndTime, getOccupiedSlots } from "../utils/timeSlots";
+import { DAYS, TIME_SLOTS, getClassEndTime, getOccupiedSlots } from "../utils/timeSlots";
 import "../App.css";
 import "./OverallSchedule.css";
-
-const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-const WEEKEND = ["Saturday", "Sunday"];
-const ALL_DAYS = [...WEEKDAYS, ...WEEKEND];
 
 function OverallSchedule({ onBack }) {
   const [schedules] = useState(() => loadSchedules());

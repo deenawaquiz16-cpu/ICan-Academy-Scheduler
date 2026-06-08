@@ -1,7 +1,8 @@
 .find-availability-page {
   padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  background: var(--bg);
+  min-height: 100vh;
+  width: 100%;
 }
 
 .page-header {

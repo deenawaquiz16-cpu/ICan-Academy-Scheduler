@@ -1,7 +1,6 @@
 .calendar-page {
-  padding: 1.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 2rem;
+  width: 100%;
 }
 
 .calendar-header-nav {
