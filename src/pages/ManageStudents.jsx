@@ -94,12 +94,6 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
                   {GRADE_LEVELS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
                 </select>
               </div>
-              <div className="modal-field">
-                <label>Class Type</label>
-                <select value={form.classType} onChange={(e) => setForm({ ...form, classType: e.target.value })}>
-                  {CLASS_TYPES.map((ct) => <option key={ct.value} value={ct.value}>{ct.icon} {ct.label}</option>)}
-                </select>
-              </div>
             </div>
 
             <div className="modal-field-row">
@@ -387,7 +381,6 @@ function ManageStudents({ onBack }) {
                 <th>Grade</th>
                 <th>Status</th>
                 <th>Class</th>
-                <th>Type</th>
                 <th>Schedule</th>
                 <th>Teacher</th>
                 <th>Start Date</th>
@@ -423,25 +416,6 @@ function ManageStudents({ onBack }) {
                     onBlur={(e) => { updateStudent(s.id, { className: e.target.value.trim() }); setStudents(loadStudents()); }} 
                     onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
                   /></td>
-                  <td>
-                    <select 
-                      value={s.classType || "online"} 
-                      onChange={(e) => { 
-                        const newType = e.target.value;
-                        const updatedSchedules = (s.schedules || []).map(sched => ({
-                          ...sched,
-                          classType: newType
-                        }));
-                        updateStudent(s.id, { 
-                          classType: newType,
-                          schedules: updatedSchedules
-                        }); 
-                        setStudents(loadStudents()); 
-                      }}
-                    >
-                      {CLASS_TYPES.map(ct => <option key={ct.value} value={ct.value}>{ct.icon} {ct.label}</option>)}
-                    </select>
-                  </td>
                   <td>{formatSchedule(s)}</td>
                   <td>
                     <select value={s.currentTeacher || ""} onChange={(e) => { updateStudent(s.id, { currentTeacher: e.target.value }); setStudents(loadStudents()); }}>
