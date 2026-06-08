@@ -126,18 +126,21 @@
 .overall-day-table,
 .overall-week-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate; /* Required for sticky borders */
+  border-spacing: 0;
   font-size: 11px;
   min-width: 800px;
   table-layout: fixed;
 }
 
-.overall-day-table thead,
-.overall-week-table thead {
+.overall-day-table thead th,
+.overall-week-table thead th {
   position: sticky;
   top: 0;
   z-index: 10;
   background: var(--primary);
+  color: white;
+  border-bottom: 2px solid var(--border);
 }
 
 .time-col {
@@ -145,16 +148,24 @@
   font-weight: 600;
   color: #495057;
   white-space: nowrap;
-  width: 70px;
-  min-width: 70px;
-  padding: 6px;
-  text-align: right;
+  width: 100px; /* Increased from 70px */
+  min-width: 100px;
+  padding: 8px 10px;
+  text-align: center;
   position: sticky;
   left: 0;
   z-index: 5;
   border-right: 2px solid var(--border);
   font-size: 10px;
 }
+
+/* Ensure the top-left corner cell is above everything */
+thead th.time-col {
+  z-index: 20;
+  background: var(--primary);
+  color: white;
+}
+
 
 .teacher-col {
   width: 120px;
