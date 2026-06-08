@@ -39,22 +39,6 @@
 }
 
 /* Specific Column Widths */
-.student-table th:nth-child(2), /* Name */
-.student-table td:nth-child(2) {
-  min-width: 250px;
-  width: 300px;
-  position: sticky;
-  left: 100px; /* Offset by the # (index) column width */
-  background: white;
-  z-index: 5;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
-}
-
-.student-table th:nth-child(2) {
-  z-index: 15;
-  background: #f8f9fa;
-}
-
 .student-table th:nth-child(1), /* # Index */
 .student-table td:nth-child(1) {
   width: 50px;
@@ -62,13 +46,30 @@
   text-align: center;
   position: sticky;
   left: 0;
-  background: #f8f9fa;
-  z-index: 5;
+  background: #f8f9fa; /* Light gray for index */
+  z-index: 12;
   border-right: 1px solid var(--border);
 }
 
+.student-table th:nth-child(2), /* Name */
+.student-table td:nth-child(2) {
+  min-width: 250px;
+  width: 300px;
+  position: sticky;
+  left: 50px; /* Perfectly aligned after the 50px Index column */
+  background: white; /* Solid white to hide content behind it */
+  z-index: 11;
+  box-shadow: 4px 0 8px rgba(0,0,0,0.05);
+  border-right: 1px solid var(--border);
+}
+
+.student-table th:nth-child(2) {
+  z-index: 22;
+  background: #f8f9fa;
+}
+
 thead th:nth-child(1) {
-  z-index: 15;
+  z-index: 23;
 }
 
 .name-inline-input {
