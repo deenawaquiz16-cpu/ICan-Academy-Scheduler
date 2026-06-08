@@ -95,7 +95,10 @@ function OverallSchedule({ onBack }) {
 
             const studentInfo = getStudentInfo(blockInfo.studentName);
             const endTime = getClassEndTime(slot.key, blockInfo.duration || 25);
-            const isOnline = blockInfo.classType?.toLowerCase() === "online";
+            
+            // Use the actual classType from the block info
+            const effectiveType = (blockInfo.classType || "online").toLowerCase();
+            const isOnline = effectiveType === "online";
             const typeClass = isOnline ? "online" : "f2f";
 
             return (
@@ -106,7 +109,7 @@ function OverallSchedule({ onBack }) {
                     {studentInfo.className && <span className="class-badge">{studentInfo.className}</span>}
                     <span className="class-time">{slot.start}-{endTime}</span>
                     <span className={`type-badge ${typeClass}`}>
-                      {isOnline ? "💻" : "👤"} {blockInfo.classType}
+                      {isOnline ? "💻" : "👤"} {effectiveType}
                     </span>
                   </div>
                 </div>
@@ -116,7 +119,8 @@ function OverallSchedule({ onBack }) {
 
           // 2. Class Continuation Cell
           if (isContinuation && !slot.isLunch) {
-            const typeClass = classInfo.classType?.toLowerCase() === "online" ? "online" : "f2f";
+            const effectiveType = (classInfo.classType || "online").toLowerCase();
+            const typeClass = effectiveType === "online" ? "online" : "f2f";
             return (
               <td key={teacher} className={`class-cell ${typeClass} class-continuation`}></td>
             );

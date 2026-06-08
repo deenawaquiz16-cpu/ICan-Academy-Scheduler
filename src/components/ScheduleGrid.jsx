@@ -117,13 +117,11 @@ function ScheduleGrid({
                     const normalizedName = (classInfo.studentName || "").trim().toLowerCase();
                     const isFree = normalizedName === "free";
                     
-                    // The GOLDEN RULE: 
-                    // 1. Is it a student in our database? -> ALWAYS ONLINE (Blue)
-                    // 2. Is it a manual memo (not in database)? -> ALWAYS FACE-TO-FACE (Green)
-                    // 3. Is it "FREE"? -> ONLINE (Red/Style)
+                    // Use the actual classType from data, defaulting to online if missing
+                    let effectiveType = (classInfo.classType || "online").toLowerCase();
                     
-                    let effectiveType = "face-to-face";
-                    if (isFree || studentMap.has(normalizedName)) {
+                    // If it's a special "FREE" slot, always style it appropriately
+                    if (isFree) {
                       effectiveType = "online";
                     }
 
