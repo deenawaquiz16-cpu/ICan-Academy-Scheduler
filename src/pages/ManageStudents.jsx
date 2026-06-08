@@ -6,19 +6,12 @@ import {
   deleteStudent,
   updateStudent,
   addScheduleToStudent,
-  restoreFromTrash,
-  permanentlyDeleteFromTrash,
 } from "../utils/storage";
 import { DAYS, DURATIONS, TIME_SLOTS } from "../utils/timeSlots";
 import "../App.css";
 import "./ManageStudents.css";
 
 const DAY_SHORT = { Monday: "Mon", Tuesday: "Tue", Wednesday: "Wed", Thursday: "Thu", Friday: "Fri", Saturday: "Sat", Sunday: "Sun" };
-
-const CLASS_TYPES = [
-  { value: "face-to-face", label: "Face-to-Face", icon: "👤" },
-  { value: "online", label: "Online", icon: "💻" },
-];
 
 const GRADE_LEVELS = [
   { value: "grade-1", label: "1" }, { value: "grade-2", label: "2" }, { value: "grade-3", label: "3" },
