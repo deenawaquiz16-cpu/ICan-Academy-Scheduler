@@ -125,11 +125,11 @@
 
 .overall-day-table,
 .overall-week-table {
-  width: 100%;
-  border-collapse: separate; /* Required for sticky borders */
+  width: max-content; /* Prevents columns from squeezing to fit container */
+  min-width: 100%;    /* Ensures it at least fills the view */
+  border-collapse: separate;
   border-spacing: 0;
   font-size: 11px;
-  min-width: 800px;
   table-layout: fixed;
 }
 
@@ -141,6 +141,7 @@
   background: var(--primary);
   color: white;
   border-bottom: 2px solid var(--border);
+  padding: 12px 8px; /* Added vertical padding for headers */
 }
 
 .time-col {
@@ -148,23 +149,25 @@
   font-weight: 600;
   color: #495057;
   white-space: nowrap;
-  width: 100px; /* Increased from 70px */
-  min-width: 100px;
-  padding: 8px 10px;
+  width: 140px; /* Increased to 140px to ensure long time strings fit */
+  min-width: 140px;
+  padding: 10px;
   text-align: center;
   position: sticky;
   left: 0;
   z-index: 5;
   border-right: 2px solid var(--border);
-  font-size: 10px;
+  font-size: 11px; /* Slightly increased for readability */
 }
 
-/* Ensure the top-left corner cell is above everything */
+/* Specific styling for the header version of time-col */
 thead th.time-col {
   z-index: 20;
-  background: var(--primary);
-  color: white;
+  background: var(--primary) !important;
+  color: white !important;
+  border-right: 2px solid rgba(255, 255, 255, 0.1);
 }
+
 
 
 .teacher-col {
