@@ -318,6 +318,7 @@ export function addScheduleToStudent(id, scheduleEntry) {
     scheduleEntry.id = scheduleEntry.id || Date.now().toString();
     student.schedules.push(scheduleEntry);
     saveStudents(data);
+    syncStudentsToTeachers(); // Automatically update teacher schedules
   }
   return data;
 }
@@ -330,6 +331,7 @@ export function editStudentSchedule(id, scheduleId, updates) {
     if (schedule) {
       Object.assign(schedule, updates);
       saveStudents(data);
+      syncStudentsToTeachers();
     }
   }
   return data;
@@ -341,6 +343,7 @@ export function deleteStudentSchedule(id, scheduleId) {
   if (student && student.schedules) {
     student.schedules = student.schedules.filter((sc) => sc.id !== scheduleId);
     saveStudents(data);
+    syncStudentsToTeachers();
   }
   return data;
 }
