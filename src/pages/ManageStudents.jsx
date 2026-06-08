@@ -27,14 +27,10 @@ const STUDENT_STATUSES = [
   { value: "stopped", label: "Stopped" },
 ];
 
-function sortStudentsFn(list, by) {
-  return [...list].sort((a, b) => {
-    if (by === "name") return a.name.localeCompare(b.name);
-    if (by === "startDate") return (a.startDate || "").localeCompare(b.startDate || "");
-    if (by === "teacher") return (a.currentTeacher || "").localeCompare(b.currentTeacher || "");
-    return 0;
-  });
-}
+const CLASS_TYPES = [
+  { value: "online", label: "Online", icon: "💻" },
+  { value: "face-to-face", label: "Face-to-Face", icon: "👤" },
+];
 
 function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
   const [form, setForm] = useState({
@@ -52,11 +48,18 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
     }));
   };
 
+  const handleSelectAllDays = () => {
+    if (form.days.length === DAYS.length) {
+      setForm({ ...form, days: [] });
+    } else {
+      setForm({ ...form, days: [...DAYS] });
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.name.trim()) return;
     onAdd(form);
-    // Reset form for next use
     setForm({
       name: "", gradeLevel: "", classType: "online", currentTeacher: "",
       startDate: new Date().toISOString().split("T")[0], endDate: "", className: "", book: "",
@@ -87,6 +90,12 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
                   {GRADE_LEVELS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
                 </select>
               </div>
+              <div className="modal-field">
+                <label>Type</label>
+                <select value={form.classType} onChange={(e) => setForm({ ...form, classType: e.target.value })}>
+                  {CLASS_TYPES.map((ct) => <option key={ct.value} value={ct.value}>{ct.icon} {ct.label}</option>)}
+                </select>
+              </div>
             </div>
 
             <div className="modal-field-row">
@@ -104,7 +113,12 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
             </div>
 
             <div className="modal-field" style={{marginTop: '10px'}}>
-              <label>Schedule (Days)</label>
+              <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '5px'}}>
+                <label>Schedule (Days)</label>
+                <button type="button" onClick={handleSelectAllDays} style={{fontSize: '11px', background: 'none', border: 'none', color: '#007bff', cursor: 'pointer'}}>
+                  {form.days.length === DAYS.length ? 'Deselect All' : 'Select All'}
+                </button>
+              </div>
               <div className="day-checkboxes" style={{display: 'flex', flexWrap: 'wrap', gap: '6px'}}>
                 {DAYS.map(d => (
                   <button key={d} type="button" className={`day-pill ${form.days.includes(d) ? 'active' : ''}`} onClick={() => handleDayToggle(d)} style={{padding: '4px 10px', fontSize: '12px', border: '1px solid #ddd', borderRadius: '20px', background: form.days.includes(d) ? '#111' : '#fff', color: form.days.includes(d) ? '#fff' : '#111', cursor: 'pointer'}}>
@@ -172,7 +186,6 @@ function ManageStudents({ onBack }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTeacher, setFilterTeacher] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  const [sortBy, setSortBy] = useState("name");
 
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
@@ -328,6 +341,10 @@ function ManageStudents({ onBack }) {
               <option value="">All Teachers</option>
               {allTeachersList.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
+            <select className="filter-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+              <option value="">All Statuses</option>
+              {STUDENT_STATUSES.map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
+            </select>
           </div>
         </div>
 
@@ -374,6 +391,7 @@ function ManageStudents({ onBack }) {
                 <th>Grade</th>
                 <th>Status</th>
                 <th>Class</th>
+                <th>Type</th>
                 <th>Schedule</th>
                 <th>Teacher</th>
                 <th>Start Date</th>
@@ -409,6 +427,25 @@ function ManageStudents({ onBack }) {
                     onBlur={(e) => { updateStudent(s.id, { className: e.target.value.trim() }); setStudents(loadStudents()); }} 
                     onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
                   /></td>
+                  <td>
+                    <select 
+                      value={s.classType || "online"} 
+                      onChange={(e) => { 
+                        const newType = e.target.value;
+                        const updatedSchedules = (s.schedules || []).map(sched => ({
+                          ...sched,
+                          classType: newType
+                        }));
+                        updateStudent(s.id, { 
+                          classType: newType,
+                          schedules: updatedSchedules
+                        }); 
+                        setStudents(loadStudents()); 
+                      }}
+                    >
+                      {CLASS_TYPES.map(ct => <option key={ct.value} value={ct.value}>{ct.icon} {ct.label}</option>)}
+                    </select>
+                  </td>
                   <td>{formatSchedule(s)}</td>
                   <td>
                     <select value={s.currentTeacher || ""} onChange={(e) => { updateStudent(s.id, { currentTeacher: e.target.value }); setStudents(loadStudents()); }}>
@@ -431,4 +468,3 @@ function ManageStudents({ onBack }) {
 }
 
 export default ManageStudents;
-// Force build 3

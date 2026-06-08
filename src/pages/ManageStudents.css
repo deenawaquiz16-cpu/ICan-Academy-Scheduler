@@ -92,18 +92,23 @@ thead th:nth-child(1) {
   min-width: 120px;
 }
 
-.student-table th:nth-child(6), /* Schedule */
+.student-table th:nth-child(6), /* Type */
 .student-table td:nth-child(6) {
+  min-width: 100px;
+}
+
+.student-table th:nth-child(7), /* Schedule */
+.student-table td:nth-child(7) {
   min-width: 160px;
 }
 
-.student-table th:nth-child(7), /* Teacher */
-.student-table td:nth-child(7) {
+.student-table th:nth-child(8), /* Teacher */
+.student-table td:nth-child(8) {
   min-width: 130px;
 }
 
-.student-table th:nth-child(10), /* Previous Teachers */
-.student-table td:nth-child(10) {
+.student-table th:nth-child(11), /* Previous Teachers */
+.student-table td:nth-child(11) {
   min-width: 150px;
 }
 
