@@ -477,10 +477,30 @@ export function getScheduledTeachers(schedules) {
 export function syncStudentsToTeachers() {
   try {
     const students = loadStudents();
+    const currentSchedules = loadSchedules();
+    const studentNamesInDb = new Set(students.map(s => s.name.trim().toLowerCase()));
 
-    // Build fresh teacher schedules from student data
+    // Build fresh teacher schedules, but PRESERVE manual memos
     const newSchedules = {};
 
+    // 1. First, carry over any manual memos from the existing schedules
+    Object.keys(currentSchedules).forEach(teacherName => {
+      newSchedules[teacherName] = {};
+      Object.keys(currentSchedules[teacherName]).forEach(day => {
+        newSchedules[teacherName][day] = {};
+        Object.keys(currentSchedules[teacherName][day]).forEach(slotKey => {
+          const entry = currentSchedules[teacherName][day][slotKey];
+          const normalizedName = (entry.studentName || "").trim().toLowerCase();
+          
+          // If this name is NOT in the database, it's a manual memo. KEEP IT.
+          if (normalizedName && normalizedName !== "free" && !studentNamesInDb.has(normalizedName)) {
+            newSchedules[teacherName][day][slotKey] = entry;
+          }
+        });
+      });
+    });
+
+    // 2. Now overlay/sync the actual students from the database
     students.forEach((student) => {
       // Skip students who are stopped or on break — they shouldn't appear in teacher schedules
       if (student.status === "stopped" || student.status === "on-break") return;
