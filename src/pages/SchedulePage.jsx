@@ -167,6 +167,46 @@ function SchedulePage({ teacherName, onBack }) {
     }
   };
 
+  const handleBlockSlot = useCallback(() => {
+    if (!contextMenu) return;
+    const { day, timeSlot } = contextMenu;
+    const updatedBlocks = blockSlot({ ...blocks }, teacherName, day, timeSlot.key);
+    setBlocks(updatedBlocks);
+    setContextMenu(null);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }, [contextMenu, blocks, teacherName]);
+
+  const handleUnblockSlot = useCallback(() => {
+    if (!contextMenu) return;
+    const { day, timeSlot } = contextMenu;
+    const updatedBlocks = unblockSlot({ ...blocks }, teacherName, day, timeSlot.key);
+    setBlocks(updatedBlocks);
+    setContextMenu(null);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }, [contextMenu, blocks, teacherName]);
+
+  const handleBlockDay = useCallback(() => {
+    if (!contextMenu) return;
+    const { day } = contextMenu;
+    const updatedBlocks = blockDay({ ...blocks }, teacherName, day);
+    setBlocks(updatedBlocks);
+    setContextMenu(null);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }, [contextMenu, blocks, teacherName]);
+
+  const handleUnblockDay = useCallback(() => {
+    if (!contextMenu) return;
+    const { day } = contextMenu;
+    const updatedBlocks = unblockDay({ ...blocks }, teacherName, day);
+    setBlocks(updatedBlocks);
+    setContextMenu(null);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }, [contextMenu, blocks, teacherName]);
+
   return (
     <div className="schedule-page">
       <div className="schedule-header">
@@ -207,7 +247,14 @@ function SchedulePage({ teacherName, onBack }) {
       {contextMenu && (
         <CellContextMenu 
           x={contextMenu.x} y={contextMenu.y} 
+          day={contextMenu.day}
+          isBlocked={isSlotBlocked(blocks, teacherName, contextMenu.day, contextMenu.timeSlot.key)}
+          isDayBlocked={isDayBlocked(blocks, teacherName, contextMenu.day)}
           onAddClass={() => { setFormOpen(true); setContextMenu(null); }} 
+          onBlockSlot={handleBlockSlot}
+          onUnblockSlot={handleUnblockSlot}
+          onBlockDay={handleBlockDay}
+          onUnblockDay={handleUnblockDay}
           onClose={() => setContextMenu(null)} 
         />
       )}
