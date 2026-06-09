@@ -478,36 +478,15 @@ export function syncStudentsToTeachers() {
   try {
     const students = loadStudents();
     const currentSchedules = loadSchedules();
-    const studentNamesInDb = new Set(students.map(s => s.name.trim().toLowerCase()));
+    
+    // Start with a copy of current schedules to preserve everything
+    const newSchedules = JSON.parse(JSON.stringify(currentSchedules));
 
-    // Build fresh teacher schedules, but PRESERVE manual memos
-    const newSchedules = {};
-
-    // 1. First, carry over any manual memos from the existing schedules
-    Object.keys(currentSchedules).forEach(teacherName => {
-      newSchedules[teacherName] = {};
-      Object.keys(currentSchedules[teacherName]).forEach(day => {
-        newSchedules[teacherName][day] = {};
-        Object.keys(currentSchedules[teacherName][day]).forEach(slotKey => {
-          const entry = currentSchedules[teacherName][day][slotKey];
-          const normalizedName = (entry.studentName || "").trim().toLowerCase();
-          
-          // If this name is NOT in the database, it's a manual memo. KEEP IT.
-          if (normalizedName && normalizedName !== "free" && !studentNamesInDb.has(normalizedName)) {
-            newSchedules[teacherName][day][slotKey] = entry;
-          }
-        });
-      });
-    });
-
-    // 2. Now overlay/sync the actual students from the database
+    // For every student in the database, update their "official" scheduled slots
     students.forEach((student) => {
-      // Skip students who are stopped or on break — they shouldn't appear in teacher schedules
+      // Skip students who are stopped or on break
       if (student.status === "stopped" || student.status === "on-break") return;
-
-      // Skip students without a teacher or schedules
-      if (!student.currentTeacher) return;
-      if (!student.schedules || !Array.isArray(student.schedules) || student.schedules.length === 0) return;
+      if (!student.currentTeacher || !student.schedules || student.schedules.length === 0) return;
 
       const teacherName = student.currentTeacher;
       if (!newSchedules[teacherName]) newSchedules[teacherName] = {};
@@ -515,21 +494,7 @@ export function syncStudentsToTeachers() {
       student.schedules.forEach((sched) => {
         if (!sched || !sched.days) return;
         
-        // Handle days as string (old format) or array (new format)
-        let daysToProcess = [];
-        if (Array.isArray(sched.days)) {
-          daysToProcess = sched.days;
-        } else if (typeof sched.days === "string") {
-          const raw = sched.days.trim().toLowerCase();
-          if (raw === "mwf") daysToProcess = ["Monday", "Wednesday", "Friday"];
-          else if (raw === "tth") daysToProcess = ["Tuesday", "Thursday"];
-          else if (raw === "daily") daysToProcess = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-          else if (raw === "weekend") daysToProcess = ["Saturday", "Sunday"];
-          else if (raw.includes(",")) daysToProcess = raw.split(",").map(d => d.trim());
-          else if (raw.includes(" ")) daysToProcess = raw.split(" ").map(d => d.trim());
-          else daysToProcess = raw.match(/[A-Z][a-z]+/g) || raw.match(/.{1,3}/g) || [raw];
-        }
-
+        let daysToProcess = Array.isArray(sched.days) ? sched.days : [];
         const DAYS_MAP = {
           "mon": "Monday", "tue": "Tuesday", "wed": "Wednesday", "thu": "Thursday", 
           "fri": "Friday", "sat": "Saturday", "sun": "Sunday",
@@ -537,13 +502,7 @@ export function syncStudentsToTeachers() {
           "thursday": "Thursday", "friday": "Friday", "saturday": "Saturday", "sunday": "Sunday"
         };
         
-        daysToProcess = [...new Set(daysToProcess
-          .map(d => {
-            const key = d.toLowerCase().trim();
-            return DAYS_MAP[key] || null;
-          })
-          .filter(Boolean)
-        )];
+        daysToProcess = [...new Set(daysToProcess.map(d => DAYS_MAP[d.toLowerCase().trim()] || null).filter(Boolean))];
 
         daysToProcess.forEach((day) => {
           if (!newSchedules[teacherName][day]) newSchedules[teacherName][day] = {};
@@ -552,16 +511,16 @@ export function syncStudentsToTeachers() {
           const occupied = getOccupiedSlots(startKey, sched.duration || 25);
 
           occupied.forEach((slotKey) => {
+            // Overlay the database-driven data
             newSchedules[teacherName][day][slotKey] = {
               studentName: student.name,
               teacherName: teacherName,
-              // STRATEGY: Respect the student's primary setting from the database
               classType: (student.classType || sched.classType || "online").toLowerCase(),
               className: sched.className || student.className || "",
               book: sched.book || student.book || "",
               duration: sched.duration || 25,
               studentStatus: student.status || "active",
-              scheduleId: sched.id || "",
+              scheduleId: sched.id || "db-" + Date.now(),
               startKey: startKey,
             };
           });

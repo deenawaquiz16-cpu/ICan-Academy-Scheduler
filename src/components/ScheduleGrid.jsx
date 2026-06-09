@@ -7,12 +7,11 @@ function ScheduleGrid({
   teacherName,
   schedule,
   blocks,
+  students = [],
   firstSelectedCell,
   onCellClick,
   onCellRightClick,
 }) {
-  const students = useMemo(() => loadStudents(), []);
-  
   // Create a map for quick lookup by normalized name
   const studentMap = useMemo(() => {
     const map = new Map();

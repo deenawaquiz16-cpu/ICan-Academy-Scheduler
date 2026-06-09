@@ -30,6 +30,7 @@ function SchedulePage({ teacherName, onBack }) {
   // CRITICAL: Removed auto-sync on load to prevent manual grid edits from being overwritten
   const [schedules, setSchedules] = useState(() => loadSchedules());
   const [blocks, setBlocks] = useState(() => loadBlocks());
+  const [students, setStudents] = useState(() => loadStudents());
   const [formOpen, setFormOpen] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
   const [selectedCell, setSelectedCell] = useState(null);
@@ -160,6 +161,7 @@ function SchedulePage({ teacherName, onBack }) {
     if (confirm("Reset and Rebuild Grid? This will fix mixed-up columns by pulling fresh data from student records once.")) {
       const refreshed = syncStudentsToTeachers();
       setSchedules(refreshed);
+      setStudents(loadStudents()); // Update local students too
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }
@@ -183,6 +185,7 @@ function SchedulePage({ teacherName, onBack }) {
         teacherName={teacherName}
         schedule={teacherSchedule} 
         blocks={teacherBlocks} 
+        students={students}
         onCellClick={handleCellClick} 
         onCellRightClick={handleCellRightClick} 
       />
