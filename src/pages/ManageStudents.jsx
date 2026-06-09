@@ -239,7 +239,7 @@ function ManageStudents({ onBack }) {
   const [editingStudent, setEditingStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTeacher, setFilterTeacher] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
+  const [filterStatus, setFilterStatus] = useState("active");
 
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
