@@ -22,10 +22,10 @@ export const DURATIONS = [
   { label: "100 min (2 hrs)", value: 100, slots: 4 },
 ];
 
-// Generate time slots from 8:00 AM to 11:55 PM with 25-min classes and 5-min gaps
+// Generate time slots from 7:00 AM to 11:55 PM with 25-min classes and 5-min gaps
 export function generateTimeSlots() {
   const slots = [];
-  let hour = 8;
+  let hour = 7;
   let minute = 0;
 
   while (hour < 24) {
