@@ -306,6 +306,27 @@ function ManageStudents({ onBack }) {
     setIsAdding(false);
   };
 
+  const handleStatusChange = (student, newStatus) => {
+    const updates = { status: newStatus };
+    
+    // Suggestion: Auto-move teacher to history if stopping
+    if (newStatus === "stopped" && student.currentTeacher) {
+      const history = student.previousTeachers || [];
+      const alreadyInHistory = history.some(h => h.name === student.currentTeacher);
+      
+      if (!alreadyInHistory) {
+        updates.previousTeachers = [
+          ...history, 
+          { name: student.currentTeacher, date: new Date().toLocaleDateString() }
+        ];
+      }
+      updates.currentTeacher = ""; // Clear current teacher to free up the grid
+    }
+
+    updateStudent(student.id, updates);
+    setStudents(loadStudents());
+  };
+
   const formatSchedule = (student) => {
     const schedules = student.schedules;
     if (!schedules || schedules.length === 0) return (
@@ -477,7 +498,7 @@ function ManageStudents({ onBack }) {
             </thead>
             <tbody>
               {filteredStudents.map((s, index) => (
-                <tr key={s.id}>
+                <tr key={s.id} className={s.status === 'stopped' ? 'student-row-stopped' : ''}>
                   <td>{index + 1}</td>
                   <td><input 
                     className="name-inline-input" 
@@ -492,7 +513,7 @@ function ManageStudents({ onBack }) {
                     </select>
                   </td>
                   <td>
-                    <select value={s.status || "active"} onChange={(e) => { updateStudent(s.id, { status: e.target.value }); setStudents(loadStudents()); }}>
+                    <select value={s.status || "active"} onChange={(e) => handleStatusChange(s, e.target.value)}>
                       {STUDENT_STATUSES.map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
                     </select>
                   </td>

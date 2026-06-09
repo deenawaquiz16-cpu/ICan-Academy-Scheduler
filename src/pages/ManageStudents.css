@@ -331,4 +331,28 @@ thead th:nth-child(1) {
   background: var(--bg);
 }
 
+/* Stopped Students Visual Fading */
+.student-row-stopped {
+  opacity: 0.6;
+  background-color: #f8f9fa;
+}
+
+.student-row-stopped:hover {
+  background-color: #f1f3f5;
+}
+
+.student-row-stopped td {
+  color: var(--text-secondary);
+}
+
+.student-row-stopped .name-inline-input {
+  text-decoration: line-through;
+  color: #adb5bd;
+}
+
+.student-row-stopped .student-table td:nth-child(2) {
+  background: #f8f9fa; /* Match the sticky column background */
+}
+
+
 
