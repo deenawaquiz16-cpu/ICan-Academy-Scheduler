@@ -456,17 +456,18 @@ function ManageStudents({ onBack }) {
              <h2>Database Records ({filteredStudents.length})</h2>
              <button className="add-row-btn" onClick={() => setIsAdding(true)}>+ Add Student</button>
              <button className="add-row-btn" onClick={handleQuickAdd} style={{marginLeft: '10px'}}>📄 Quick Row</button>
-          </div>
-          <div className="student-filters" style={{display: 'flex', gap: '10px'}}>
-            <input type="text" className="filter-input" placeholder="Search students..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-            <select className="filter-select" value={filterTeacher} onChange={(e) => setFilterTeacher(e.target.value)}>
-              <option value="">All Teachers</option>
-              {allTeachersList.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-            <select className="filter-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-              <option value="">All Statuses</option>
-              {STUDENT_STATUSES.map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
-            </select>
+             
+             <div className="student-filters" style={{display: 'flex', gap: '10px', marginLeft: '20px'}}>
+              <input type="text" className="filter-input" placeholder="Search students..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              <select className="filter-select" value={filterTeacher} onChange={(e) => setFilterTeacher(e.target.value)}>
+                <option value="">All Teachers</option>
+                {allTeachersList.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <select className="filter-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+                <option value="">All Statuses</option>
+                {STUDENT_STATUSES.map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
+              </select>
+            </div>
           </div>
         </div>
 
