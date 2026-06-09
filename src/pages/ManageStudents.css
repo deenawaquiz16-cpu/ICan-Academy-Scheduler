@@ -264,3 +264,71 @@ thead th:nth-child(1) {
   color: #cf222e;
 }
 
+/* Multiple Schedule UI */
+.modal-divider {
+  margin: 1.5rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--bg);
+  font-weight: 800;
+  color: var(--primary);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+.schedule-entry-block {
+  background: var(--bg);
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+}
+
+.schedule-entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.schedule-entry-header span {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.remove-sched-btn {
+  background: none;
+  border: none;
+  color: #cf222e;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.remove-sched-btn:hover {
+  background: #fff5f5;
+}
+
+.add-another-sched-btn {
+  width: 100%;
+  padding: 10px;
+  background: white;
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 1rem;
+}
+
+.add-another-sched-btn:hover {
+  border-color: var(--primary);
+  background: var(--bg);
+}
+
+

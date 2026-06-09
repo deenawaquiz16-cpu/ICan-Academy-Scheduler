@@ -36,8 +36,11 @@ function StudentModal({ isOpen, onClose, onSave, allTeachersList, initialData = 
   const [form, setForm] = useState({
     name: "", gradeLevel: "", classType: "online", currentTeacher: "",
     startDate: new Date().toISOString().split("T")[0], endDate: "", className: "", book: "",
-    days: [], timeSlot: "08:00", duration: 25, previousTeacher: ""
+    previousTeacher: ""
   });
+
+  // Array of schedule objects: { id, days, timeSlot, duration }
+  const [schedules, setSchedules] = useState([{ id: Date.now().toString(), days: [], timeSlot: "08:00", duration: 25 }]);
 
   useEffect(() => {
     if (initialData) {
@@ -50,47 +53,58 @@ function StudentModal({ isOpen, onClose, onSave, allTeachersList, initialData = 
         endDate: initialData.endDate || "",
         className: initialData.className || "",
         book: initialData.book || "",
-        days: (initialData.schedules && initialData.schedules[0]?.days) || [],
-        timeSlot: (initialData.schedules && initialData.schedules[0]?.timeSlot) || "08:00",
-        duration: (initialData.schedules && initialData.schedules[0]?.duration) || 25,
         previousTeacher: (initialData.previousTeachers && initialData.previousTeachers[0]?.name) || ""
       });
+      if (initialData.schedules && initialData.schedules.length > 0) {
+        setSchedules(initialData.schedules.map(s => ({ ...s })));
+      } else {
+        setSchedules([{ id: Date.now().toString(), days: [], timeSlot: "08:00", duration: 25 }]);
+      }
     } else if (isOpen) {
       setForm({
         name: "", gradeLevel: "", classType: "online", currentTeacher: "",
         startDate: new Date().toISOString().split("T")[0], endDate: "", className: "", book: "",
-        days: [], timeSlot: "08:00", duration: 25, previousTeacher: ""
+        previousTeacher: ""
       });
+      setSchedules([{ id: Date.now().toString(), days: [], timeSlot: "08:00", duration: 25 }]);
     }
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
-  const handleDayToggle = (d) => {
-    setForm(prev => ({
-      ...prev,
-      days: prev.days.includes(d) ? prev.days.filter(x => x !== d) : [...prev.days, d]
-    }));
+  const handleAddSchedule = () => {
+    setSchedules([...schedules, { id: Date.now().toString(), days: [], timeSlot: "08:00", duration: 25 }]);
   };
 
-  const handleSelectAllDays = () => {
-    if (form.days.length === DAYS.length) {
-      setForm({ ...form, days: [] });
-    } else {
-      setForm({ ...form, days: [...DAYS] });
+  const handleRemoveSchedule = (id) => {
+    if (schedules.length > 1) {
+      setSchedules(schedules.filter(s => s.id !== id));
     }
+  };
+
+  const handleUpdateSchedule = (id, updates) => {
+    setSchedules(schedules.map(s => s.id === id ? { ...s, ...updates } : s));
+  };
+
+  const handleDayToggle = (scheduleId, d) => {
+    const sched = schedules.find(s => s.id === scheduleId);
+    if (!sched) return;
+    const newDays = sched.days.includes(d) 
+      ? sched.days.filter(x => x !== d) 
+      : [...sched.days, d];
+    handleUpdateSchedule(scheduleId, { days: newDays });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.name.trim()) return;
-    onSave(form);
+    onSave({ ...form, schedules });
     onClose();
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" style={{ maxWidth: '550px' }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{initialData ? "📝 Edit Student Record" : "🎓 Add New Student"}</h2>
           <button className="modal-close" onClick={onClose}>×</button>
@@ -132,36 +146,55 @@ function StudentModal({ isOpen, onClose, onSave, allTeachersList, initialData = 
               </div>
             </div>
 
-            <div className="modal-field" style={{marginTop: '10px'}}>
-              <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '5px'}}>
-                <label>Schedule (Days)</label>
-                <button type="button" onClick={handleSelectAllDays} style={{fontSize: '11px', background: 'none', border: 'none', color: '#007bff', cursor: 'pointer'}}>
-                  {form.days.length === DAYS.length ? 'Deselect All' : 'Select All'}
-                </button>
-              </div>
-              <div className="day-checkboxes" style={{display: 'flex', flexWrap: 'wrap', gap: '6px'}}>
-                {DAYS.map(d => (
-                  <button key={d} type="button" className={`day-pill ${form.days.includes(d) ? 'active' : ''}`} onClick={() => handleDayToggle(d)} style={{padding: '4px 10px', fontSize: '12px', border: '1px solid #ddd', borderRadius: '20px', background: form.days.includes(d) ? '#111' : '#fff', color: form.days.includes(d) ? '#fff' : '#111', cursor: 'pointer'}}>
-                    {d.slice(0,3)}
-                  </button>
-                ))}
-              </div>
+            <div className="modal-divider">Schedules</div>
+
+            <div className="schedules-container">
+              {schedules.map((sched, idx) => (
+                <div key={sched.id} className="schedule-entry-block">
+                  <div className="schedule-entry-header">
+                    <span>Schedule #{idx + 1}</span>
+                    {schedules.length > 1 && (
+                      <button type="button" className="remove-sched-btn" onClick={() => handleRemoveSchedule(sched.id)}>Remove</button>
+                    )}
+                  </div>
+                  
+                  <div className="modal-field">
+                    <label>Days</label>
+                    <div className="day-checkboxes" style={{display: 'flex', flexWrap: 'wrap', gap: '6px'}}>
+                      {DAYS.map(d => (
+                        <button 
+                          key={d} 
+                          type="button" 
+                          className={`day-pill ${sched.days.includes(d) ? 'active' : ''}`} 
+                          onClick={() => handleDayToggle(sched.id, d)}
+                          style={{padding: '4px 10px', fontSize: '11px', border: '1px solid #ddd', borderRadius: '20px', background: sched.days.includes(d) ? '#111' : '#fff', color: sched.days.includes(d) ? '#fff' : '#111', cursor: 'pointer'}}
+                        >
+                          {d.slice(0,3)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="modal-field-row">
+                    <div className="modal-field">
+                      <label>Start Time</label>
+                      <select value={sched.timeSlot} onChange={(e) => handleUpdateSchedule(sched.id, { timeSlot: e.target.value })}>
+                        {TIME_SLOTS.filter(s => !s.isLunch).map(s => <option key={s.key} value={s.key}>{s.start}</option>)}
+                      </select>
+                    </div>
+                    <div className="modal-field">
+                      <label>Duration</label>
+                      <select value={sched.duration} onChange={(e) => handleUpdateSchedule(sched.id, { duration: Number(e.target.value) })}>
+                        {DURATIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <button type="button" className="add-another-sched-btn" onClick={handleAddSchedule}>+ Add Another Time</button>
             </div>
 
-            <div className="modal-field-row">
-              <div className="modal-field">
-                <label>Start Time</label>
-                <select value={form.timeSlot} onChange={(e) => setForm({ ...form, timeSlot: e.target.value })}>
-                  {TIME_SLOTS.filter(s => !s.isLunch).map(s => <option key={s.key} value={s.key}>{s.start}</option>)}
-                </select>
-              </div>
-              <div className="modal-field">
-                <label>Duration</label>
-                <select value={form.duration} onChange={(e) => setForm({ ...form, duration: Number(e.target.value) })}>
-                  {DURATIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
-                </select>
-              </div>
-            </div>
+            <div className="modal-divider">Class Details</div>
 
             <div className="modal-field-row">
               <div className="modal-field">
@@ -230,7 +263,6 @@ function ManageStudents({ onBack }) {
 
   const handleSaveStudent = (data) => {
     if (editingStudent) {
-      // Update existing
       updateStudent(editingStudent.id, {
         name: data.name,
         gradeLevel: data.gradeLevel,
@@ -240,37 +272,15 @@ function ManageStudents({ onBack }) {
         endDate: data.endDate,
         className: data.className,
         book: data.book,
-        previousTeachers: data.previousTeacher ? [{ name: data.previousTeacher, date: new Date().toLocaleDateString() }] : (editingStudent.previousTeachers || [])
+        previousTeachers: data.previousTeacher ? [{ name: data.previousTeacher, date: new Date().toLocaleDateString() }] : (editingStudent.previousTeachers || []),
+        schedules: data.schedules.map(s => ({
+          ...s,
+          classType: data.classType,
+          className: data.className,
+          book: data.book
+        }))
       });
-
-      if (data.days && data.days.length > 0) {
-        // Just update the first schedule for simplicity in this quick-edit mode
-        const updatedSchedules = [...(editingStudent.schedules || [])];
-        if (updatedSchedules.length > 0) {
-          updatedSchedules[0] = {
-            ...updatedSchedules[0],
-            days: data.days,
-            timeSlot: data.timeSlot,
-            duration: data.duration,
-            classType: data.classType,
-            className: data.className,
-            book: data.book
-          };
-        } else {
-          updatedSchedules.push({
-            id: Date.now().toString(),
-            days: data.days,
-            timeSlot: data.timeSlot,
-            duration: data.duration,
-            classType: data.classType,
-            className: data.className,
-            book: data.book
-          });
-        }
-        updateStudent(editingStudent.id, { schedules: updatedSchedules });
-      }
     } else {
-      // Create new
       const newStudents = addStudent(data.name);
       const newId = newStudents[newStudents.length - 1].id;
       
@@ -282,19 +292,14 @@ function ManageStudents({ onBack }) {
         endDate: data.endDate,
         className: data.className,
         book: data.book,
-        previousTeachers: data.previousTeacher ? [{ name: data.previousTeacher, date: new Date().toLocaleDateString() }] : []
-      });
-
-      if (data.days.length > 0) {
-        addScheduleToStudent(newId, {
-          days: data.days,
-          timeSlot: data.timeSlot,
-          duration: data.duration,
+        previousTeachers: data.previousTeacher ? [{ name: data.previousTeacher, date: new Date().toLocaleDateString() }] : [],
+        schedules: data.schedules.map(s => ({
+          ...s,
           classType: data.classType,
           className: data.className,
           book: data.book
-        });
-      }
+        }))
+      });
     }
     setStudents(loadStudents());
     setEditingStudent(null);
