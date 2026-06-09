@@ -25,7 +25,8 @@ function App() {
       
       let totalClasses = 0;
       students.filter(s => s.status === 'active').forEach(student => {
-        if (student.schedules && Array.isArray(student.schedules)) {
+        // Only count classes if the student has an assigned teacher
+        if (student.currentTeacher && student.schedules && Array.isArray(student.schedules)) {
           const activeSchedules = student.schedules.filter(sched => sched.days && sched.days.length > 0);
           totalClasses += activeSchedules.length;
         }
