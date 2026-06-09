@@ -114,20 +114,25 @@ function ScheduleGrid({
 
                   // 1. Class Cell (Start or Continuation)
                   if (classInfo && !slot.isLunch) {
-                    const normalizedName = (classInfo.studentName || "").trim().toLowerCase();
+                    const studentName = classInfo.studentName || "";
+                    const normalizedName = studentName.trim().toLowerCase();
                     const isFree = normalizedName === "free";
                     
-                    // Use the actual classType from data, defaulting to online if missing
-                    let effectiveType = (classInfo.classType || "online").toLowerCase();
+                    // Look up student in database
+                    const dbStudent = studentMap.get(normalizedName);
                     
-                    // If it's a special "FREE" slot, always style it appropriately
+                    let effectiveType = "face-to-face"; // Default for manual memos (not in db)
+                    
                     if (isFree) {
-                      effectiveType = "online";
+                      effectiveType = "online"; // FREE slots are technically online/styled red
+                    } else if (dbStudent) {
+                      // IF in database, use their setting (usually Online)
+                      effectiveType = (dbStudent.classType || "online").toLowerCase();
                     }
 
                     const isOnline = effectiveType === "online";
                     const typeClass = isOnline ? "online" : "f2f";
-                    const studentStatus = classInfo.studentStatus || "active";
+                    const studentStatus = classInfo.studentStatus || (dbStudent ? dbStudent.status : "active");
                     const statusIndicator = studentStatus === "on-break" ? "🟡" : studentStatus === "stopped" ? "🔴" : "";
 
                     return (
@@ -136,9 +141,9 @@ function ScheduleGrid({
                         className={`schedule-cell class-${typeClass} ${isStartOfBlock ? "class-start" : "class-continuation"}`}
                         onClick={() => onCellClick(day, slot)}
                       >
-                        <div className="class-block" title={`${classInfo.studentName} (${effectiveType}) - ${classInfo.duration}min\nBook: ${classInfo.book || "N/A"}`}>
+                        <div className="class-block" title={`${studentName} (${effectiveType}) - ${classInfo.duration}min\nBook: ${classInfo.book || "N/A"}`}>
                           <div className="class-student">
-                            <span className="student-name-text">{classInfo.studentName}</span>
+                            <span className="student-name-text">{studentName}</span>
                             {statusIndicator && <span className="student-status-indicator" title={`Status: ${studentStatus}`}>{statusIndicator}</span>}
                           </div>
                           {classInfo.className && (
@@ -146,7 +151,7 @@ function ScheduleGrid({
                           )}
                           <div className="class-details">
                             <span className={`class-type-badge ${typeClass}`}>
-                              {isOnline ? "💻" : "👤"} {effectiveType}
+                              {isOnline ? "💻" : "👤"} {effectiveType.toUpperCase()}
                             </span>
                           </div>
                         </div>

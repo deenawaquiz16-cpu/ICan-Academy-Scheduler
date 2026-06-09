@@ -93,23 +93,32 @@ function OverallSchedule({ onBack }) {
             const blockInfo = getClassForCell(teacher, day, slot.key);
             if (!blockInfo) return null;
 
-            const studentInfo = getStudentInfo(blockInfo.studentName);
+            const studentName = blockInfo.studentName || "";
+            const normalizedName = studentName.trim().toLowerCase();
+            const studentInfo = getStudentInfo(studentName);
             const endTime = getClassEndTime(slot.key, blockInfo.duration || 25);
             
-            // Use the actual classType from the block info
-            const effectiveType = (blockInfo.classType || "online").toLowerCase();
+            // Database-first logic
+            const dbStudent = allStudents.find(s => s.name.trim().toLowerCase() === normalizedName);
+            let effectiveType = "face-to-face";
+            if (normalizedName === "free") {
+              effectiveType = "online";
+            } else if (dbStudent) {
+              effectiveType = (dbStudent.classType || "online").toLowerCase();
+            }
+
             const isOnline = effectiveType === "online";
             const typeClass = isOnline ? "online" : "f2f";
 
             return (
               <td key={teacher} className={`class-cell ${typeClass} class-start`}>
                 <div className="class-card">
-                  <strong className="class-student-name">{studentInfo.name}</strong>
+                  <strong className="class-student-name">{studentName}</strong>
                   <div className="class-card-body">
                     {studentInfo.className && <span className="class-badge">{studentInfo.className}</span>}
                     <span className="class-time">{slot.start}-{endTime}</span>
                     <span className={`type-badge ${typeClass}`}>
-                      {isOnline ? "💻" : "👤"} {effectiveType}
+                      {isOnline ? "💻" : "👤"} {effectiveType.toUpperCase()}
                     </span>
                   </div>
                 </div>
@@ -119,7 +128,17 @@ function OverallSchedule({ onBack }) {
 
           // 2. Class Continuation Cell
           if (isContinuation && !slot.isLunch) {
-            const effectiveType = (classInfo.classType || "online").toLowerCase();
+            const studentName = classInfo.studentName || "";
+            const normalizedName = studentName.trim().toLowerCase();
+            const dbStudent = allStudents.find(s => s.name.trim().toLowerCase() === normalizedName);
+            
+            let effectiveType = "face-to-face";
+            if (normalizedName === "free") {
+              effectiveType = "online";
+            } else if (dbStudent) {
+              effectiveType = (dbStudent.classType || "online").toLowerCase();
+            }
+            
             const typeClass = effectiveType === "online" ? "online" : "f2f";
             return (
               <td key={teacher} className={`class-cell ${typeClass} class-continuation`}></td>

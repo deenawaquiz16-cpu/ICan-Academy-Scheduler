@@ -535,7 +535,8 @@ export function syncStudentsToTeachers() {
             newSchedules[teacherName][day][slotKey] = {
               studentName: student.name,
               teacherName: teacherName,
-              classType: (sched.classType || student.classType || "online").toLowerCase(),
+              // STRATEGY: Respect the student's primary setting from the database
+              classType: (student.classType || sched.classType || "online").toLowerCase(),
               className: sched.className || student.className || "",
               book: sched.book || student.book || "",
               duration: sched.duration || 25,
