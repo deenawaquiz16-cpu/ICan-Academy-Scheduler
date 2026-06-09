@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   loadStudents,
   loadTeachers,
@@ -32,12 +32,37 @@ const CLASS_TYPES = [
   { value: "face-to-face", label: "Face-to-Face", icon: "👤" },
 ];
 
-function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
+function StudentModal({ isOpen, onClose, onSave, allTeachersList, initialData = null }) {
   const [form, setForm] = useState({
     name: "", gradeLevel: "", classType: "online", currentTeacher: "",
     startDate: new Date().toISOString().split("T")[0], endDate: "", className: "", book: "",
     days: [], timeSlot: "08:00", duration: 25, previousTeacher: ""
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setForm({
+        name: initialData.name || "",
+        gradeLevel: initialData.gradeLevel || "",
+        classType: initialData.classType || "online",
+        currentTeacher: initialData.currentTeacher || "",
+        startDate: initialData.startDate || new Date().toISOString().split("T")[0],
+        endDate: initialData.endDate || "",
+        className: initialData.className || "",
+        book: initialData.book || "",
+        days: (initialData.schedules && initialData.schedules[0]?.days) || [],
+        timeSlot: (initialData.schedules && initialData.schedules[0]?.timeSlot) || "08:00",
+        duration: (initialData.schedules && initialData.schedules[0]?.duration) || 25,
+        previousTeacher: (initialData.previousTeachers && initialData.previousTeachers[0]?.name) || ""
+      });
+    } else if (isOpen) {
+      setForm({
+        name: "", gradeLevel: "", classType: "online", currentTeacher: "",
+        startDate: new Date().toISOString().split("T")[0], endDate: "", className: "", book: "",
+        days: [], timeSlot: "08:00", duration: 25, previousTeacher: ""
+      });
+    }
+  }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -59,12 +84,7 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.name.trim()) return;
-    onAdd(form);
-    setForm({
-      name: "", gradeLevel: "", classType: "online", currentTeacher: "",
-      startDate: new Date().toISOString().split("T")[0], endDate: "", className: "", book: "",
-      days: [], timeSlot: "08:00", duration: 25, previousTeacher: ""
-    });
+    onSave(form);
     onClose();
   };
 
@@ -72,7 +92,7 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" style={{ maxWidth: '550px' }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>🎓 Add New Student</h2>
+          <h2>{initialData ? "📝 Edit Student Record" : "🎓 Add New Student"}</h2>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
         <form onSubmit={handleSubmit}>
@@ -167,7 +187,7 @@ function StudentModal({ isOpen, onClose, onAdd, allTeachersList }) {
           </div>
           <div className="modal-footer">
             <button type="button" className="modal-cancel-btn" onClick={onClose}>Cancel</button>
-            <button type="submit" className="modal-save-btn">Add Student</button>
+            <button type="submit" className="modal-save-btn">{initialData ? "Save Changes" : "Add Student"}</button>
           </div>
         </form>
       </div>
@@ -183,6 +203,7 @@ function ManageStudents({ onBack }) {
 
   const [students, setStudents] = useState(() => loadStudents());
   const [isAdding, setIsAdding] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTeacher, setFilterTeacher] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -205,6 +226,79 @@ function ManageStudents({ onBack }) {
     }
     addStudent(name);
     setStudents(loadStudents());
+  };
+
+  const handleSaveStudent = (data) => {
+    if (editingStudent) {
+      // Update existing
+      updateStudent(editingStudent.id, {
+        name: data.name,
+        gradeLevel: data.gradeLevel,
+        classType: data.classType,
+        currentTeacher: data.currentTeacher,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        className: data.className,
+        book: data.book,
+        previousTeachers: data.previousTeacher ? [{ name: data.previousTeacher, date: new Date().toLocaleDateString() }] : (editingStudent.previousTeachers || [])
+      });
+
+      if (data.days && data.days.length > 0) {
+        // Just update the first schedule for simplicity in this quick-edit mode
+        const updatedSchedules = [...(editingStudent.schedules || [])];
+        if (updatedSchedules.length > 0) {
+          updatedSchedules[0] = {
+            ...updatedSchedules[0],
+            days: data.days,
+            timeSlot: data.timeSlot,
+            duration: data.duration,
+            classType: data.classType,
+            className: data.className,
+            book: data.book
+          };
+        } else {
+          updatedSchedules.push({
+            id: Date.now().toString(),
+            days: data.days,
+            timeSlot: data.timeSlot,
+            duration: data.duration,
+            classType: data.classType,
+            className: data.className,
+            book: data.book
+          });
+        }
+        updateStudent(editingStudent.id, { schedules: updatedSchedules });
+      }
+    } else {
+      // Create new
+      const newStudents = addStudent(data.name);
+      const newId = newStudents[newStudents.length - 1].id;
+      
+      updateStudent(newId, {
+        gradeLevel: data.gradeLevel,
+        classType: data.classType,
+        currentTeacher: data.currentTeacher,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        className: data.className,
+        book: data.book,
+        previousTeachers: data.previousTeacher ? [{ name: data.previousTeacher, date: new Date().toLocaleDateString() }] : []
+      });
+
+      if (data.days.length > 0) {
+        addScheduleToStudent(newId, {
+          days: data.days,
+          timeSlot: data.timeSlot,
+          duration: data.duration,
+          classType: data.classType,
+          className: data.className,
+          book: data.book
+        });
+      }
+    }
+    setStudents(loadStudents());
+    setEditingStudent(null);
+    setIsAdding(false);
   };
 
   const formatSchedule = (student) => {
@@ -255,7 +349,9 @@ function ManageStudents({ onBack }) {
                 const newTime = prompt("Enter time (e.g. 5:00 PM):", startTimeLabel);
                 if (newTime === null) return;
                 
-                const matchedSlot = TIME_SLOTS.find(ts => ts.start.toLowerCase() === newTime.toLowerCase().trim());
+                // Robust time matching: remove spaces and compare
+                const cleanInputTime = newTime.replace(/\s/g, '').toLowerCase();
+                const matchedSlot = TIME_SLOTS.find(ts => ts.start.replace(/\s/g, '').toLowerCase() === cleanInputTime);
                 
                 if (newDays.length > 0 && matchedSlot) {
                   const updatedSchedules = [...student.schedules];
@@ -349,36 +445,10 @@ function ManageStudents({ onBack }) {
         </div>
 
         <StudentModal 
-          isOpen={isAdding} 
-          onClose={() => setIsAdding(false)} 
-          onAdd={(data) => { 
-            const newStudents = addStudent(data.name);
-            const newId = newStudents[newStudents.length - 1].id;
-            
-            updateStudent(newId, {
-              gradeLevel: data.gradeLevel,
-              classType: data.classType,
-              currentTeacher: data.currentTeacher,
-              startDate: data.startDate,
-              endDate: data.endDate,
-              className: data.className,
-              book: data.book,
-              previousTeachers: data.previousTeacher ? [{ name: data.previousTeacher, date: new Date().toLocaleDateString() }] : []
-            });
-
-            if (data.days.length > 0) {
-              addScheduleToStudent(newId, {
-                days: data.days,
-                timeSlot: data.timeSlot,
-                duration: data.duration,
-                classType: data.classType,
-                className: data.className,
-                book: data.book
-              });
-            }
-            
-            setStudents(loadStudents()); 
-          }} 
+          isOpen={isAdding || !!editingStudent} 
+          onClose={() => { setIsAdding(false); setEditingStudent(null); }} 
+          initialData={editingStudent}
+          onSave={handleSaveStudent} 
           allTeachersList={allTeachersList} 
         />
 
@@ -456,7 +526,10 @@ function ManageStudents({ onBack }) {
                   <td><input type="date" value={s.startDate || ""} onChange={(e) => { updateStudent(s.id, { startDate: e.target.value }); setStudents(loadStudents()); }} /></td>
                   <td><input type="date" value={s.endDate || ""} onChange={(e) => { updateStudent(s.id, { endDate: e.target.value }); setStudents(loadStudents()); }} /></td>
                   <td>{formatHistory(s)}</td>
-                  <td><button className="delete-row-btn" onClick={() => { if(confirm(`Delete ${s.name}?`)) { deleteStudent(s.id); setStudents(loadStudents()); } }}>🗑️</button></td>
+                  <td className="actions-cell">
+                    <button className="edit-row-btn" onClick={() => setEditingStudent(s)} title="Edit Full Record">✏️</button>
+                    <button className="delete-row-btn" onClick={() => { if(confirm(`Delete ${s.name}?`)) { deleteStudent(s.id); setStudents(loadStudents()); } }}>🗑️</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
