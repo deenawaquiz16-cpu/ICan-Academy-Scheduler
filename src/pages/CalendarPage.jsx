@@ -144,7 +144,7 @@ function CalendarPage({ onBack }) {
               >
                 {day && (
                   <>
-                    <div className="day-header">
+                    <div className="cal-day-header">
                       <span className="day-number">{day.day}</span>
                       {day.holiday && <span className="holiday-dot" title={day.holiday}>•</span>}
                     </div>

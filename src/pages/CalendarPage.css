@@ -139,7 +139,7 @@
   font-weight: 800;
 }
 
-.day-header {
+.cal-day-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
