@@ -11,6 +11,30 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.tracker-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.filter-toggle input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
 }
 
 .tracker-title-area {
@@ -80,7 +104,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
   transition: all 0.15s;
@@ -94,6 +118,11 @@
   background: #f0fdf4;
 }
 
+.tracker-item.is-na {
+  background: #f8f9fa;
+  opacity: 0.6;
+}
+
 .tracker-item.is-sent:hover {
   background: #dcfce7;
 }
@@ -102,6 +131,12 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.student-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .student-name {
@@ -128,6 +163,45 @@
   font-size: 0.75rem;
   color: var(--text-secondary);
   font-weight: 500;
+}
+
+.na-badge {
+  font-size: 0.65rem;
+  background: #e9ecef;
+  color: #495057;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.tracker-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.na-toggle-btn {
+  background: white;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.na-toggle-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.na-toggle-btn.active {
+  background: #343a40;
+  border-color: #343a40;
+  color: white;
 }
 
 /* Custom Checkbox */
@@ -162,6 +236,12 @@
 .checkbox-wrapper input:checked ~ .checkbox-custom {
   background-color: #10b981;
   border-color: #10b981;
+}
+
+.checkbox-wrapper input:disabled ~ .checkbox-custom {
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+  cursor: not-allowed;
 }
 
 .checkbox-custom:after {
@@ -200,6 +280,13 @@
   height: 100%;
   background: #10b981;
   transition: width 0.3s ease;
+}
+
+@media (max-width: 900px) {
+  .tracker-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 @media (max-width: 768px) {

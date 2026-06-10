@@ -5,8 +5,13 @@ import "./AnnouncementTracker.css";
 function AnnouncementTracker() {
   const [students, setStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [hideNotAffected, setHideNotAffected] = useState(false);
   const [sentStatus, setSentStatus] = useState(() => {
     const saved = localStorage.getItem("ican-holiday-sent-students");
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [notAffectedStatus, setNotAffectedStatus] = useState(() => {
+    const saved = localStorage.getItem("ican-holiday-not-affected");
     return saved ? JSON.parse(saved) : {};
   });
 
@@ -16,30 +21,51 @@ function AnnouncementTracker() {
   }, []);
 
   const filteredStudents = useMemo(() => {
-    return students.filter(s => 
-      s.name.toLowerCase().includes(searchQuery.toLowerCase())
-    ).sort((a, b) => a.name.localeCompare(b.name));
-  }, [students, searchQuery]);
+    return students.filter(s => {
+      const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase());
+      if (hideNotAffected && notAffectedStatus[s.id]) return false;
+      return matchesSearch;
+    }).sort((a, b) => a.name.localeCompare(b.name));
+  }, [students, searchQuery, hideNotAffected, notAffectedStatus]);
 
   const toggleSent = (id) => {
+    if (notAffectedStatus[id]) return; // Can't send to not affected
     const updated = { ...sentStatus, [id]: !sentStatus[id] };
     setSentStatus(updated);
     localStorage.setItem("ican-holiday-sent-students", JSON.stringify(updated));
   };
 
+  const toggleNotAffected = (e, id) => {
+    e.stopPropagation();
+    const updated = { ...notAffectedStatus, [id]: !notAffectedStatus[id] };
+    setNotAffectedStatus(updated);
+    localStorage.setItem("ican-holiday-not-affected", JSON.stringify(updated));
+    
+    // If marking as N/A, remove from sent
+    if (updated[id] && sentStatus[id]) {
+      const updatedSent = { ...sentStatus };
+      delete updatedSent[id];
+      setSentStatus(updatedSent);
+      localStorage.setItem("ican-holiday-sent-students", JSON.stringify(updatedSent));
+    }
+  };
+
   const stats = useMemo(() => {
-    const sentCount = students.filter(s => sentStatus[s.id]).length;
+    const affectedStudents = students.filter(s => !notAffectedStatus[s.id]);
+    const sentCount = affectedStudents.filter(s => sentStatus[s.id]).length;
     return {
       sent: sentCount,
-      total: students.length,
-      percent: students.length > 0 ? Math.round((sentCount / students.length) * 100) : 0
+      total: affectedStudents.length,
+      percent: affectedStudents.length > 0 ? Math.round((sentCount / affectedStudents.length) * 100) : 0
     };
-  }, [students, sentStatus]);
+  }, [students, sentStatus, notAffectedStatus]);
 
   const handleReset = () => {
     if (confirm("Are you sure you want to reset all tracking? This will uncheck all students.")) {
       setSentStatus({});
+      setNotAffectedStatus({});
       localStorage.removeItem("ican-holiday-sent-students");
+      localStorage.removeItem("ican-holiday-not-affected");
     }
   };
 
@@ -49,12 +75,22 @@ function AnnouncementTracker() {
         <div className="tracker-title-area">
           <h2>Holiday Announcement Tracking</h2>
           <div className="tracker-stats-pill">
-            {stats.sent} / {stats.total} Sent ({stats.percent}%)
+            {stats.sent} / {stats.total} Affected Sent ({stats.percent}%)
           </div>
         </div>
-        <button className="reset-tracker-btn" onClick={handleReset} title="Clear all checkboxes">
-          🔄 Reset
-        </button>
+        <div className="tracker-header-actions">
+          <label className="filter-toggle">
+            <input 
+              type="checkbox" 
+              checked={hideNotAffected} 
+              onChange={(e) => setHideNotAffected(e.target.checked)} 
+            />
+            <span>Hide Not Affected</span>
+          </label>
+          <button className="reset-tracker-btn" onClick={handleReset} title="Clear all checkboxes">
+            🔄 Reset
+          </button>
+        </div>
       </div>
 
       <div className="tracker-controls">
@@ -69,30 +105,48 @@ function AnnouncementTracker() {
 
       <div className="tracker-list">
         {filteredStudents.length > 0 ? (
-          filteredStudents.map((student, index) => (
-            <div 
-              key={student.id} 
-              className={`tracker-item ${sentStatus[student.id] ? 'is-sent' : ''}`}
-              onClick={() => toggleSent(student.id)}
-            >
-              <div className="student-info">
-                <span className="student-name">
-                  <span className="student-index">{index + 1}.</span> {student.name}
-                </span>
-                {student.currentTeacher && (
-                  <span className="student-teacher-tag">{student.currentTeacher}</span>
-                )}
+          filteredStudents.map((student, index) => {
+            const isSent = !!sentStatus[student.id];
+            const isNA = !!notAffectedStatus[student.id];
+            
+            return (
+              <div 
+                key={student.id} 
+                className={`tracker-item ${isSent ? 'is-sent' : ''} ${isNA ? 'is-na' : ''}`}
+                onClick={() => toggleSent(student.id)}
+              >
+                <div className="student-info">
+                  <span className="student-name">
+                    <span className="student-index">{index + 1}.</span> {student.name}
+                  </span>
+                  <div className="student-meta-row">
+                    {student.currentTeacher && (
+                      <span className="student-teacher-tag">{student.currentTeacher}</span>
+                    )}
+                    {isNA && <span className="na-badge">Not Affected</span>}
+                  </div>
+                </div>
+                <div className="tracker-item-actions">
+                  <button 
+                    className={`na-toggle-btn ${isNA ? 'active' : ''}`}
+                    onClick={(e) => toggleNotAffected(e, student.id)}
+                    title={isNA ? "Mark as Affected" : "Mark as Not Affected"}
+                  >
+                    N/A
+                  </button>
+                  <div className="checkbox-wrapper">
+                    <input 
+                      type="checkbox" 
+                      checked={isSent} 
+                      disabled={isNA}
+                      readOnly 
+                    />
+                    <span className="checkbox-custom"></span>
+                  </div>
+                </div>
               </div>
-              <div className="checkbox-wrapper">
-                <input 
-                  type="checkbox" 
-                  checked={!!sentStatus[student.id]} 
-                  readOnly 
-                />
-                <span className="checkbox-custom"></span>
-              </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div className="empty-tracker">
             {searchQuery ? "No matching students found." : "No active students to track."}
