@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { getHoliday } from "../utils/holidayUtils";
+import { getHoliday, getAllHolidaysForYear } from "../utils/holidayUtils";
 import "../App.css";
 import "./CalendarPage.css";
 
@@ -11,13 +11,19 @@ const MONTHS = [
 const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function CalendarPage({ onBack }) {
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 4, 1)); // Default to May 2026
+  const today = useMemo(() => new Date(), []);
+  const [currentDate, setCurrentDate] = useState(new Date()); // Default to current month
   const [selectedDateKey, setSelectedDateKey] = useState(null);
   const [notes, setNotes] = useState(() => {
     const saved = localStorage.getItem("ican-academy-notes");
     return saved ? JSON.parse(saved) : {};
   });
   const [currentNote, setCurrentNote] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sentAnnouncements, setSentAnnouncements] = useState(() => {
+    const saved = localStorage.getItem("ican-holiday-announcements");
+    return saved ? JSON.parse(saved) : {};
+  });
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -34,15 +40,22 @@ function CalendarPage({ onBack }) {
     // Days of current month
     for (let i = 1; i <= daysInMonth; i++) {
       const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`;
+      const d = new Date(year, month, i);
+      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+      const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === i;
+
       days.push({
         day: i,
         dateKey,
+        isWeekend,
+        isToday,
         holiday: getHoliday(dateKey),
-        hasNote: !!notes[dateKey]
+        hasNote: !!notes[dateKey],
+        note: notes[dateKey] || ""
       });
     }
     return days;
-  }, [year, month, daysInMonth, firstDayOfMonth, notes]);
+  }, [year, month, daysInMonth, firstDayOfMonth, notes, today]);
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1));
@@ -50,6 +63,13 @@ function CalendarPage({ onBack }) {
 
   const handleNextMonth = () => {
     setCurrentDate(new Date(year, month + 1, 1));
+  };
+
+  const handleGoToToday = () => {
+    setCurrentDate(new Date());
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    setSelectedDateKey(todayKey);
+    setCurrentNote(notes[todayKey] || "");
   };
 
   const handleDateClick = (day) => {
@@ -69,10 +89,30 @@ function CalendarPage({ onBack }) {
     localStorage.setItem("ican-academy-notes", JSON.stringify(updatedNotes));
   };
 
+  const toggleAnnouncement = (dateKey) => {
+    const updated = { ...sentAnnouncements, [dateKey]: !sentAnnouncements[dateKey] };
+    setSentAnnouncements(updated);
+    localStorage.setItem("ican-holiday-announcements", JSON.stringify(updated));
+  };
+
   const selectedDayInfo = useMemo(() => {
     if (!selectedDateKey) return null;
     return calendarDays.find(d => d?.dateKey === selectedDateKey);
   }, [selectedDateKey, calendarDays]);
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    return Object.entries(notes)
+      .filter(([date, note]) => note.toLowerCase().includes(searchQuery.toLowerCase()))
+      .sort((a, b) => b[0].localeCompare(a[0])); // Recent first
+  }, [notes, searchQuery]);
+
+  const handleSearchResultClick = (dateKey) => {
+    const [y, m, d] = dateKey.split("-").map(Number);
+    setCurrentDate(new Date(y, m - 1, 1));
+    setSelectedDateKey(dateKey);
+    setCurrentNote(notes[dateKey] || "");
+  };
 
   return (
     <div className="calendar-page">
@@ -84,26 +124,35 @@ function CalendarPage({ onBack }) {
       <div className="calendar-layout">
         <div className="calendar-main">
           <div className="calendar-month-nav">
-            <button onClick={handlePrevMonth}>&lt;</button>
-            <h2>{MONTHS[month]} {year}</h2>
-            <button onClick={handleNextMonth}>&gt;</button>
+            <div className="month-nav-left">
+              <button onClick={handlePrevMonth}>&lt;</button>
+              <h2>{MONTHS[month]} {year}</h2>
+              <button onClick={handleNextMonth}>&gt;</button>
+            </div>
+            <button className="today-btn" onClick={handleGoToToday}>Today</button>
           </div>
 
           <div className="calendar-grid">
             {DAYS_OF_WEEK.map(day => (
-              <div key={day} className="weekday-header">{day}</div>
+              <div key={day} className={`weekday-header ${day === "Sun" || day === "Sat" ? "weekend" : ""}`}>{day}</div>
             ))}
             {calendarDays.map((day, idx) => (
               <div
                 key={idx}
-                className={`calendar-day ${!day ? "empty" : ""} ${day?.holiday ? "holiday" : ""} ${day?.dateKey === selectedDateKey ? "selected" : ""} ${day?.hasNote ? "has-note" : ""}`}
+                className={`calendar-day ${!day ? "empty" : ""} ${day?.holiday ? "holiday" : ""} ${day?.isWeekend ? "weekend" : ""} ${day?.isToday ? "today" : ""} ${day?.dateKey === selectedDateKey ? "selected" : ""} ${day?.hasNote ? "has-note" : ""}`}
                 onClick={() => handleDateClick(day)}
               >
                 {day && (
                   <>
-                    <span className="day-number">{day.day}</span>
-                    {day.holiday && <span className="holiday-dot" title={day.holiday}>•</span>}
-                    {day.hasNote && <span className="note-indicator">📝</span>}
+                    <div className="day-header">
+                      <span className="day-number">{day.day}</span>
+                      {day.holiday && <span className="holiday-dot" title={day.holiday}>•</span>}
+                    </div>
+                    {day.hasNote && (
+                      <div className="day-note-preview">
+                        {day.note}
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -132,43 +181,66 @@ function CalendarPage({ onBack }) {
           )}
 
           <div className="upcoming-holidays">
-            <h3>2026 Holidays</h3>
+            <h3>{year} Holiday Announcements</h3>
             <div className="holiday-list">
-              {Object.entries(getPhilippineHolidays()).map(([date, name]) => (
-                <div key={date} className="holiday-item">
-                  <span className="holiday-date">{date}</span>
-                  <span className="holiday-name">{name}</span>
-                </div>
-              ))}
+              {Object.entries(getAllHolidaysForYear(year)).map(([dateKey, name]) => {
+                const [,, day] = dateKey.split("-");
+                const mIdx = parseInt(dateKey.split("-")[1]) - 1;
+                const displayDate = `${MONTHS[mIdx].substring(0, 3)} ${day}`;
+                const isSent = !!sentAnnouncements[dateKey];
+                
+                return (
+                  <div 
+                    key={dateKey} 
+                    className={`holiday-item ${isSent ? 'sent' : ''}`}
+                    onClick={() => toggleAnnouncement(dateKey)}
+                    title={isSent ? "Announcement Sent" : "Mark as Sent"}
+                  >
+                    <div className="holiday-info">
+                      <span className="holiday-date">{displayDate}</span>
+                      <span className="holiday-name">{name}</span>
+                    </div>
+                    <div className="sent-indicator">
+                      {isSent ? "✅ Sent" : "🔔 Send?"}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+          </div>
+
+          <div className="search-notes-section">
+            <h3>Search Notes</h3>
+            <input
+              type="text"
+              placeholder="Search in notes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="note-search-input"
+            />
+            {searchQuery && (
+              <div className="search-results">
+                {searchResults.length > 0 ? (
+                  searchResults.map(([date, note]) => (
+                    <div 
+                      key={date} 
+                      className="search-result-item"
+                      onClick={() => handleSearchResultClick(date)}
+                    >
+                      <div className="result-date">{date}</div>
+                      <div className="result-preview">{note}</div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="no-results">No notes found.</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
-}
-
-// Helper to list all holidays for the sidebar
-function getPhilippineHolidays() {
-  return {
-    "Jan 1": "New Year's Day",
-    "Feb 25": "EDSA People Power",
-    "Apr 2": "Maundy Thursday",
-    "Apr 3": "Good Friday",
-    "Apr 4": "Black Saturday",
-    "Apr 9": "Araw ng Kagitingan",
-    "May 1": "Labor Day",
-    "Jun 12": "Independence Day",
-    "Aug 21": "Ninoy Aquino Day",
-    "Aug 31": "National Heroes Day",
-    "Nov 1": "All Saints' Day",
-    "Nov 2": "All Souls' Day",
-    "Nov 30": "Bonifacio Day",
-    "Dec 8": "Immaculate Conception",
-    "Dec 25": "Christmas Day",
-    "Dec 30": "Rizal Day",
-    "Dec 31": "New Year's Eve"
-  };
 }
 
 export default CalendarPage;
