@@ -69,14 +69,16 @@ function AnnouncementTracker() {
 
       <div className="tracker-list">
         {filteredStudents.length > 0 ? (
-          filteredStudents.map(student => (
+          filteredStudents.map((student, index) => (
             <div 
               key={student.id} 
               className={`tracker-item ${sentStatus[student.id] ? 'is-sent' : ''}`}
               onClick={() => toggleSent(student.id)}
             >
               <div className="student-info">
-                <span className="student-name">{student.name}</span>
+                <span className="student-name">
+                  <span className="student-index">{index + 1}.</span> {student.name}
+                </span>
                 {student.currentTeacher && (
                   <span className="student-teacher-tag">{student.currentTeacher}</span>
                 )}

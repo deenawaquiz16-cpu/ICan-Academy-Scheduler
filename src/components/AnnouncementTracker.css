@@ -110,6 +110,14 @@
   font-size: 0.95rem;
 }
 
+.student-index {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-right: 4px;
+  display: inline-block;
+  min-width: 20px;
+}
+
 .tracker-item.is-sent .student-name {
   color: #15803d;
   text-decoration: line-through;
