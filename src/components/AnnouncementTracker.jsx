@@ -6,6 +6,7 @@ function AnnouncementTracker() {
   const [students, setStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [hideNotAffected, setHideNotAffected] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
   const [sentStatus, setSentStatus] = useState(() => {
     const saved = localStorage.getItem("ican-holiday-sent-students");
     return saved ? JSON.parse(saved) : {};
@@ -69,6 +70,14 @@ function AnnouncementTracker() {
     }
   };
 
+  const summaryData = useMemo(() => {
+    const sent = students.filter(s => sentStatus[s.id]).sort((a, b) => a.name.localeCompare(b.name));
+    const exempted = students.filter(s => notAffectedStatus[s.id]).sort((a, b) => a.name.localeCompare(b.name));
+    const pending = students.filter(s => !sentStatus[s.id] && !notAffectedStatus[s.id]).sort((a, b) => a.name.localeCompare(b.name));
+    
+    return { sent, exempted, pending };
+  }, [students, sentStatus, notAffectedStatus]);
+
   return (
     <div className="dashboard-card announcement-tracker">
       <div className="tracker-header">
@@ -90,8 +99,53 @@ function AnnouncementTracker() {
           <button className="reset-tracker-btn" onClick={handleReset} title="Clear all checkboxes">
             🔄 Reset
           </button>
+          <button className="summary-btn" onClick={() => setShowSummary(true)}>
+            📊 Summary
+          </button>
         </div>
       </div>
+
+      {showSummary && (
+        <div className="tracker-modal-overlay" onClick={() => setShowSummary(false)}>
+          <div className="tracker-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Announcement Summary</h2>
+              <button className="close-modal" onClick={() => setShowSummary(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="summary-section">
+                <h3 className="sent-title">✅ Sent ({summaryData.sent.length})</h3>
+                <div className="summary-list">
+                  {summaryData.sent.length > 0 ? (
+                    summaryData.sent.map((s, i) => <div key={s.id} className="summary-name">{i+1}. {s.name}</div>)
+                  ) : <p className="empty-text">No announcements sent yet.</p>}
+                </div>
+              </div>
+
+              <div className="summary-section">
+                <h3 className="exempt-title">🚫 Exempted ({summaryData.exempted.length})</h3>
+                <div className="summary-list">
+                  {summaryData.exempted.length > 0 ? (
+                    summaryData.exempted.map((s, i) => <div key={s.id} className="summary-name">{i+1}. {s.name}</div>)
+                  ) : <p className="empty-text">No students exempted.</p>}
+                </div>
+              </div>
+
+              <div className="summary-section">
+                <h3 className="pending-title">⏳ Remaining ({summaryData.pending.length})</h3>
+                <div className="summary-list">
+                  {summaryData.pending.length > 0 ? (
+                    summaryData.pending.map((s, i) => <div key={s.id} className="summary-name">{i+1}. {s.name}</div>)
+                  ) : <p className="empty-text">All caught up!</p>}
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="close-btn-footer" onClick={() => setShowSummary(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="tracker-controls">
         <input 
