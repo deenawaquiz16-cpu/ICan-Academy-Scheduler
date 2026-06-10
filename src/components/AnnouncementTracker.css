@@ -1,0 +1,202 @@
+.announcement-tracker {
+  grid-column: span 2;
+  display: flex;
+  flex-direction: column;
+  height: 500px; /* Fixed height with scrolling */
+  padding: 1.5rem !important;
+}
+
+.tracker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.tracker-title-area {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.tracker-stats-pill {
+  background: var(--surface);
+  color: var(--primary);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+}
+
+.reset-tracker-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reset-tracker-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.tracker-controls {
+  margin-bottom: 1rem;
+}
+
+.tracker-search {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-size: 0.9rem;
+}
+
+.tracker-search:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: white;
+}
+
+.tracker-list {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.tracker-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tracker-item:hover {
+  background: white;
+}
+
+.tracker-item.is-sent {
+  background: #f0fdf4;
+}
+
+.tracker-item.is-sent:hover {
+  background: #dcfce7;
+}
+
+.student-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.student-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.tracker-item.is-sent .student-name {
+  color: #15803d;
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.student-teacher-tag {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Custom Checkbox */
+.checkbox-wrapper {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.checkbox-wrapper input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkbox-custom {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 24px;
+  width: 24px;
+  background-color: white;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.tracker-item:hover .checkbox-custom {
+  border-color: var(--primary);
+}
+
+.checkbox-wrapper input:checked ~ .checkbox-custom {
+  background-color: #10b981;
+  border-color: #10b981;
+}
+
+.checkbox-custom:after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 8px;
+  top: 4px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox-wrapper input:checked ~ .checkbox-custom:after {
+  display: block;
+}
+
+.empty-tracker {
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.tracker-progress-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  margin-top: 1rem;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #10b981;
+  transition: width 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .announcement-tracker {
+    grid-column: span 1;
+    height: 400px;
+  }
+}

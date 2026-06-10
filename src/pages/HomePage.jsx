@@ -1,3 +1,4 @@
+import AnnouncementTracker from "../components/AnnouncementTracker";
 import "../App.css";
 
 function HomePage({ stats, onSelectCategory, onManageStudents }) {
@@ -59,6 +60,8 @@ function HomePage({ stats, onSelectCategory, onManageStudents }) {
             </button>
           </div>
         </div>
+
+        <AnnouncementTracker />
       </div>
 
       <footer className="dashboard-footer">
