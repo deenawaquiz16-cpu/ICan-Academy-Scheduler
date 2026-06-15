@@ -24,6 +24,7 @@ const GRADE_LEVELS = [
 const STUDENT_STATUSES = [
   { value: "active", label: "Active" },
   { value: "on-break", label: "On Break" },
+  { value: "on-vacation", label: "On Vacation" },
   { value: "stopped", label: "Stopped" },
 ];
 
@@ -499,7 +500,7 @@ function ManageStudents({ onBack }) {
             </thead>
             <tbody>
               {filteredStudents.map((s, index) => (
-                <tr key={s.id} className={s.status === 'stopped' ? 'student-row-stopped' : ''}>
+                <tr key={s.id} className={`${s.status === 'stopped' ? 'student-row-stopped' : ''} ${s.status === 'on-vacation' ? 'student-row-vacation' : ''}`}>
                   <td>{index + 1}</td>
                   <td><input 
                     className="name-inline-input" 

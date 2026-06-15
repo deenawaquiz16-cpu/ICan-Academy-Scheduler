@@ -539,7 +539,7 @@ export function syncStudentsToTeachers() {
 
     // For every student in the database, update their "official" scheduled slots
     students.forEach((student) => {
-      // Skip students who are stopped or on break
+      // Skip students who are stopped or on break, but KEEP on-vacation
       if (student.status === "stopped" || student.status === "on-break") return;
       if (!student.currentTeacher || !student.schedules || student.schedules.length === 0) return;
 

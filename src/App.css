@@ -2407,3 +2407,27 @@ body {
 .preset-btn:hover {
   background: #e2e8f0;
 }
+
+/* ===== VACATION STATUS STYLES ===== */
+.cross-out {
+  text-decoration: line-through !important;
+  opacity: 0.7;
+}
+
+.student-row-vacation {
+  background-color: #fef3c7 !important; /* Light amber background */
+}
+
+.student-row-vacation td {
+  text-decoration: line-through;
+  color: #92400e;
+}
+
+.student-row-vacation select, 
+.student-row-vacation input {
+  text-decoration: line-through;
+}
+
+.status-vacation {
+  filter: grayscale(0.5);
+}

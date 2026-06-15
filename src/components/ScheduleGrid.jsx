@@ -132,16 +132,17 @@ function ScheduleGrid({
                     const isOnline = effectiveType === "online";
                     const typeClass = isOnline ? "online" : "f2f";
                     const studentStatus = classInfo.studentStatus || (dbStudent ? dbStudent.status : "active");
-                    const statusIndicator = studentStatus === "on-break" ? "🟡" : studentStatus === "stopped" ? "🔴" : "";
+                    const statusIndicator = studentStatus === "on-break" ? "🟡" : studentStatus === "stopped" ? "🔴" : studentStatus === "on-vacation" ? "🏖️" : "";
+                    const isVacation = studentStatus === "on-vacation";
 
                     return (
                       <td
                         key={cellKey}
-                        className={`schedule-cell class-${typeClass} ${isStartOfBlock ? "class-start" : "class-continuation"}`}
+                        className={`schedule-cell class-${typeClass} ${isStartOfBlock ? "class-start" : "class-continuation"} ${isVacation ? "status-vacation" : ""}`}
                         onClick={() => onCellClick(day, slot)}
                       >
                         <div className="class-block" title={`${studentName} (${effectiveType}) - ${classInfo.duration}min\nBook: ${classInfo.book || "N/A"}`}>
-                          <div className="class-student">
+                          <div className={`class-student ${isVacation ? "cross-out" : ""}`}>
                             <span className="student-name-text">{studentName}</span>
                             {statusIndicator && <span className="student-status-indicator" title={`Status: ${studentStatus}`}>{statusIndicator}</span>}
                           </div>

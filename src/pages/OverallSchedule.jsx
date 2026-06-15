@@ -109,11 +109,12 @@ function OverallSchedule({ onBack }) {
 
             const isOnline = effectiveType === "online";
             const typeClass = isOnline ? "online" : "f2f";
+            const isVacation = dbStudent?.status === "on-vacation";
 
             return (
-              <td key={teacher} className={`class-cell ${typeClass} class-start`}>
+              <td key={teacher} className={`class-cell ${typeClass} class-start ${isVacation ? "status-vacation" : ""}`}>
                 <div className="class-card">
-                  <strong className="class-student-name">{studentName}</strong>
+                  <strong className={`class-student-name ${isVacation ? "cross-out" : ""}`}>{studentName}</strong>
                   <div className="class-card-body">
                     {studentInfo.className && <span className="class-badge">{studentInfo.className}</span>}
                     <span className="class-time">{slot.start}-{endTime}</span>
@@ -140,8 +141,10 @@ function OverallSchedule({ onBack }) {
             }
             
             const typeClass = effectiveType === "online" ? "online" : "f2f";
+            const isVacation = dbStudent?.status === "on-vacation";
+
             return (
-              <td key={teacher} className={`class-cell ${typeClass} class-continuation`}></td>
+              <td key={teacher} className={`class-cell ${typeClass} class-continuation ${isVacation ? "status-vacation" : ""}`}></td>
             );
           }
 
