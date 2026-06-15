@@ -1,5 +1,5 @@
 .announcement-tracker {
-  grid-column: span 2;
+  grid-column: span 1;
   display: flex;
   flex-direction: column;
   height: 500px; /* Fixed height with scrolling */
