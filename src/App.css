@@ -2379,3 +2379,31 @@ body {
   opacity: 1;
   filter: none;
 }
+
+/* ===== BLOCK FORM STYLES ===== */
+.save-btn.block-btn {
+  background: #4a5568 !important;
+}
+
+.save-btn.block-btn:hover {
+  background: #2d3748 !important;
+}
+
+.day-presets {
+  margin-bottom: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.preset-btn {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  background: #edf2f7;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.preset-btn:hover {
+  background: #e2e8f0;
+}

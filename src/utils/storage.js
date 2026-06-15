@@ -413,6 +413,61 @@ export function blockSlot(blocks, teacherName, day, timeKey) {
   return blocks;
 }
 
+export function blockRange(blocks, teacherName, day, startKey, duration) {
+  if (!blocks[teacherName]) blocks[teacherName] = { blockedDays: [], blockedSlots: {} };
+  if (!blocks[teacherName].blockedSlots) blocks[teacherName].blockedSlots = {};
+  if (!blocks[teacherName].blockedSlots[day]) blocks[teacherName].blockedSlots[day] = [];
+
+  const occupied = getOccupiedSlots(startKey, duration);
+  occupied.forEach(slotKey => {
+    if (!blocks[teacherName].blockedSlots[day].includes(slotKey)) {
+      blocks[teacherName].blockedSlots[day].push(slotKey);
+    }
+  });
+
+  saveBlocks(blocks);
+  return blocks;
+}
+
+export function blockMultiDay(blocks, teacherName, days, startKey, duration) {
+  if (!blocks[teacherName]) blocks[teacherName] = { blockedDays: [], blockedSlots: {} };
+  if (!blocks[teacherName].blockedSlots) blocks[teacherName].blockedSlots = {};
+
+  const occupied = getOccupiedSlots(startKey, duration);
+  
+  days.forEach(day => {
+    if (!blocks[teacherName].blockedSlots[day]) blocks[teacherName].blockedSlots[day] = [];
+    occupied.forEach(slotKey => {
+      if (!blocks[teacherName].blockedSlots[day].includes(slotKey)) {
+        blocks[teacherName].blockedSlots[day].push(slotKey);
+      }
+    });
+  });
+
+  saveBlocks(blocks);
+  return blocks;
+}
+
+export function blockUntilEndOfDay(blocks, teacherName, day, startKey) {
+  if (!blocks[teacherName]) blocks[teacherName] = { blockedDays: [], blockedSlots: {} };
+  if (!blocks[teacherName].blockedSlots) blocks[teacherName].blockedSlots = {};
+  if (!blocks[teacherName].blockedSlots[day]) blocks[teacherName].blockedSlots[day] = [];
+
+  const startIndex = TIME_SLOTS.findIndex(s => s.key === startKey);
+  if (startIndex === -1) return blocks;
+
+  for (let i = startIndex; i < TIME_SLOTS.length; i++) {
+    const slot = TIME_SLOTS[i];
+    if (slot.isLunch) continue;
+    if (!blocks[teacherName].blockedSlots[day].includes(slot.key)) {
+      blocks[teacherName].blockedSlots[day].push(slot.key);
+    }
+  }
+
+  saveBlocks(blocks);
+  return blocks;
+}
+
 export function unblockSlot(blocks, teacherName, day, timeKey) {
   if (!blocks[teacherName]) return blocks;
   if (blocks[teacherName].blockedSlots?.[day]) {

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import "../App.css";
 
-function CellContextMenu({ x, y, day, isBlocked, isDayBlocked, onAddClass, onBlockSlot, onUnblockSlot, onBlockDay, onUnblockDay, onClose }) {
+function CellContextMenu({ x, y, day, isBlocked, isDayBlocked, onAddClass, onBlockSlot, onBlockRange, onBlockUntilEndOfDay, onCustomBlock, onUnblockSlot, onBlockDay, onUnblockDay, onClose }) {
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -35,9 +35,23 @@ function CellContextMenu({ x, y, day, isBlocked, isDayBlocked, onAddClass, onBlo
             🔓 Unblock This Time
           </button>
         ) : (
-          <button className="context-menu-item block" onClick={onBlockSlot}>
-            🔒 Block This Time
-          </button>
+          <>
+            <button className="context-menu-item block" onClick={onBlockSlot}>
+              🔒 Block This Time (30m)
+            </button>
+            <button className="context-menu-item block" onClick={() => onBlockRange(50)}>
+              🔒 Block 1 Hour
+            </button>
+            <button className="context-menu-item block" onClick={() => onBlockRange(100)}>
+              🔒 Block 2 Hours
+            </button>
+            <button className="context-menu-item block" onClick={onBlockUntilEndOfDay}>
+              ⏳ Block Rest of Day
+            </button>
+            <button className="context-menu-item block" onClick={onCustomBlock}>
+              🛠️ Custom Block...
+            </button>
+          </>
         )}
 
         <div className="context-menu-divider" />

@@ -1,4 +1,5 @@
 import AnnouncementTracker from "../components/AnnouncementTracker";
+import StudentNotes from "../components/StudentNotes";
 import "../App.css";
 
 function HomePage({ stats, onSelectCategory, onManageStudents }) {
@@ -62,6 +63,7 @@ function HomePage({ stats, onSelectCategory, onManageStudents }) {
         </div>
 
         <AnnouncementTracker />
+        <StudentNotes />
       </div>
 
       <footer className="dashboard-footer">

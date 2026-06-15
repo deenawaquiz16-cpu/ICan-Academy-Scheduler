@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import ScheduleGrid from "../components/ScheduleGrid";
 import ClassForm from "../components/ClassForm";
+import BlockForm from "../components/BlockForm";
 import CellContextMenu from "../components/CellContextMenu";
 import WarningToast from "../components/WarningToast";
 import {
@@ -11,6 +12,9 @@ import {
   isSlotBlocked,
   isDayBlocked,
   blockSlot,
+  blockRange,
+  blockMultiDay,
+  blockUntilEndOfDay,
   unblockSlot,
   blockDay,
   unblockDay,
@@ -32,6 +36,7 @@ function SchedulePage({ teacherName, onBack }) {
   const [blocks, setBlocks] = useState(() => loadBlocks());
   const [students, setStudents] = useState(() => loadStudents());
   const [formOpen, setFormOpen] = useState(false);
+  const [blockFormOpen, setBlockFormOpen] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
   const [selectedCell, setSelectedCell] = useState(null);
   const [saved, setSaved] = useState(false);
@@ -177,6 +182,34 @@ function SchedulePage({ teacherName, onBack }) {
     setTimeout(() => setSaved(false), 2000);
   }, [contextMenu, blocks, teacherName]);
 
+  const handleBlockRange = useCallback((duration) => {
+    if (!contextMenu) return;
+    const { day, timeSlot } = contextMenu;
+    const updatedBlocks = blockRange({ ...blocks }, teacherName, day, timeSlot.key, duration);
+    setBlocks(updatedBlocks);
+    setContextMenu(null);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }, [contextMenu, blocks, teacherName]);
+
+  const handleBlockUntilEndOfDay = useCallback(() => {
+    if (!contextMenu) return;
+    const { day, timeSlot } = contextMenu;
+    const updatedBlocks = blockUntilEndOfDay({ ...blocks }, teacherName, day, timeSlot.key);
+    setBlocks(updatedBlocks);
+    setContextMenu(null);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }, [contextMenu, blocks, teacherName]);
+
+  const handleCustomBlockSave = (days, startKey, duration) => {
+    const updatedBlocks = blockMultiDay({ ...blocks }, teacherName, days, startKey, duration);
+    setBlocks(updatedBlocks);
+    setBlockFormOpen(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
   const handleUnblockSlot = useCallback(() => {
     if (!contextMenu) return;
     const { day, timeSlot } = contextMenu;
@@ -244,6 +277,16 @@ function SchedulePage({ teacherName, onBack }) {
         />
       )}
 
+      {blockFormOpen && selectedCell && (
+        <BlockForm
+          teacherName={teacherName}
+          day={selectedCell.day}
+          timeSlot={selectedCell.timeSlot}
+          onSave={handleCustomBlockSave}
+          onClose={() => setBlockFormOpen(false)}
+        />
+      )}
+
       {contextMenu && (
         <CellContextMenu 
           x={contextMenu.x} y={contextMenu.y} 
@@ -252,6 +295,9 @@ function SchedulePage({ teacherName, onBack }) {
           isDayBlocked={isDayBlocked(blocks, teacherName, contextMenu.day)}
           onAddClass={() => { setFormOpen(true); setContextMenu(null); }} 
           onBlockSlot={handleBlockSlot}
+          onBlockRange={handleBlockRange}
+          onBlockUntilEndOfDay={handleBlockUntilEndOfDay}
+          onCustomBlock={() => { setBlockFormOpen(true); setSelectedCell({ day: contextMenu.day, timeSlot: contextMenu.timeSlot }); setContextMenu(null); }}
           onUnblockSlot={handleUnblockSlot}
           onBlockDay={handleBlockDay}
           onUnblockDay={handleUnblockDay}
